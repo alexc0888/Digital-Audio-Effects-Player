@@ -1,0 +1,2 @@
+../Core/Src/matrix_driver.c:4:6:initMatrix	8	static
+../Core/Src/matrix_driver.c:11:6:shiftRow	24	static
