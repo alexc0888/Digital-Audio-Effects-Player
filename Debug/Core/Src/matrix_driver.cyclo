@@ -1,5 +1,0 @@
-../Core/Src/matrix_driver.c:9:6:initMatrix	1
-../Core/Src/matrix_driver.c:23:6:fillScreen	3
-../Core/Src/matrix_driver.c:35:6:initScreen	5
-../Core/Src/matrix_driver.c:71:6:setup_TIM8	1
-../Core/Src/matrix_driver.c:83:6:setup_DMA2_S1	1
