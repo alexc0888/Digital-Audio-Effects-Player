@@ -99,6 +99,8 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   initMatrix();
+  uint8_t row = 0;
+  uint8_t color = 1;
 
   /* USER CODE END 2 */
 
@@ -108,6 +110,18 @@ int main(void)
   {
 
     /* USER CODE END WHILE */
+  	HAL_Delay(50);
+  	updateRow(row, color);
+  	row++;
+  	if(row > 31)
+  	{
+  		row = 0;
+  		color++;
+  		if(color > 7)
+  		{
+  			color = 1;
+  		}
+  	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

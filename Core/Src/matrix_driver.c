@@ -32,6 +32,25 @@ void fillScreen(uint8_t color1, uint8_t color2)
 	}
 }
 
+void updateRow(uint8_t r, uint8_t color)
+{
+	if(r < 16)
+	{
+		for(int col = 0; col < SCREEN_COL; col++)
+		{
+			screen[r % 16][col].rgb1 = color;
+		}
+	}
+	else
+	{
+		for(int col = 0; col < SCREEN_COL; col++)
+		{
+			screen[r % 16][col].rgb2 = color;
+		}
+	}
+
+}
+
 void initScreen()
 {
 	for(int row = 0; row < SCREEN_ROW; row++)

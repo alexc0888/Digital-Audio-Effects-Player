@@ -25,6 +25,7 @@ typedef struct
 
 
 void initMatrix(void);
+void updateRow(uint8_t, uint8_t);
 void setup_TIM8(uint8_t, uint8_t);
 void setup_DMA2_S1(void);
 void fillScreen(uint8_t, uint8_t);
