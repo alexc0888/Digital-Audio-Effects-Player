@@ -5,21 +5,23 @@
 
 #define ROW 16
 #define COL 64
-#define MEMSIZE ROW * 64
+#define MEMSIZE ROW * COL
 
 // structure for DMA output (16 bits/ 2B)
 typedef struct
 {
-	int dead1: 2;
-	int rgb1: 3;
-	int rgb2: 3;
-	int addr: 5;
-	int dead2: 3;
+	unsigned int dead1: 2;
+	unsigned int rgb1:  3;
+	unsigned int rgb2:  3;
+	unsigned int addr:  5;
+	unsigned int dead2: 3;
 } hub75_gpio_t;
 
 
 void initMatrix(void);
-void setup_TIM2(void);
+void setup_TIM8(void);
 void setup_DMA(void);
+void fillScreen(uint8_t);
+void initScreenAddr();
 
 #endif

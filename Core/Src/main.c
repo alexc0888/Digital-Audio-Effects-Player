@@ -284,21 +284,21 @@ static void MX_GPIO_Init(void)
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
-  // GPIOA
+  // GPIOA [oe and latch signals for matrix]
   GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  // GPIOA [AFR for clock signal]
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  // GPIOC [AFR for matrix clk pwm signal]
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Alternate = 1; // AFR1 for TIM2_CH1
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Alternate = 3; // AFR3 for TIM8_CH1
+  //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  // GPIOE
+  // GPIOE [RGB1/RGB2 and addr pins for matrix]
   GPIO_InitStruct.Pin  = GPIO_PIN_All & ~(GPIO_PIN_0 | GPIO_PIN_1);
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
