@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := Digital_Audio_Effects_Player
+BUILD_ARTIFACT_NAME := Digital-Audio-Effects-Player
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-Digital_Audio_Effects_Player.elf \
+Digital-Audio-Effects-Player.elf \
 
 MAP_FILES += \
-Digital_Audio_Effects_Player.map \
+Digital-Audio-Effects-Player.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-Digital_Audio_Effects_Player.list \
+Digital-Audio-Effects-Player.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: Digital_Audio_Effects_Player.elf secondary-outputs
+main-build: Digital-Audio-Effects-Player.elf secondary-outputs
 
 # Tool invocations
-Digital_Audio_Effects_Player.elf Digital_Audio_Effects_Player.map: $(OBJS) $(USER_OBJS) C:\Users\serap\STM32CubeIDE\workspace_1.18.0\Digital_Audio_Effects_Player\STM32F413ZHTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Digital_Audio_Effects_Player.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\serap\STM32CubeIDE\workspace_1.18.0\Digital_Audio_Effects_Player\STM32F413ZHTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Digital_Audio_Effects_Player.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Digital-Audio-Effects-Player.elf Digital-Audio-Effects-Player.map: $(OBJS) $(USER_OBJS) C:\Users\serap\STM32CubeIDE\workspace_1.18.0\Digital-Audio-Effects-Player\STM32F413ZHTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Digital-Audio-Effects-Player.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\serap\STM32CubeIDE\workspace_1.18.0\Digital-Audio-Effects-Player\STM32F413ZHTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Digital-Audio-Effects-Player.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Digital_Audio_Effects_Player.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Digital_Audio_Effects_Player.list"
+Digital-Audio-Effects-Player.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Digital-Audio-Effects-Player.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) Digital_Audio_Effects_Player.elf Digital_Audio_Effects_Player.list Digital_Audio_Effects_Player.map default.size.stdout
+	-$(RM) Digital-Audio-Effects-Player.elf Digital-Audio-Effects-Player.list Digital-Audio-Effects-Player.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
