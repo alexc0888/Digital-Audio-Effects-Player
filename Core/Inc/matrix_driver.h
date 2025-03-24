@@ -23,12 +23,29 @@ typedef struct
 	unsigned int clk:   1;
 } hub75_gpio_t;
 
+// Colors enumerated as 0bRBG
+typedef enum
+{
+	BLACK,
+	RED,
+	BLUE,
+	PURPLE,
+	GREEN,
+	YELLOW,
+	TEAL,
+	WHITE
+} color_t;
 
+// Driver Functions
 void initMatrix(void);
-void updateRow(uint8_t, uint8_t);
+void drawFrame(color_t [ROW][COL]);
+void updateRow(uint8_t, color_t [COL]);
+void updatePixel(uint8_t, uint8_t, color_t);
+void initScreen(void);
+uint8_t transformRowNum(uint8_t);
+
+// STM32 Peripheral Settings
 void setup_TIM8(uint8_t, uint8_t);
 void setup_DMA2_S1(void);
-void fillScreen(uint8_t, uint8_t);
-void initScreen(void);
 
 #endif

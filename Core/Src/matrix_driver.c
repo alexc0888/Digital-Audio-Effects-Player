@@ -2,9 +2,10 @@
 #include "matrix_driver.h"
 #include <string.h>
 
-
 // structure to contain frame data ready to be directly DMA'ed to matrix pins
 hub75_gpio_t screen [SCREEN_ROW][SCREEN_COL];
+
+
 
 void initMatrix(void)
 {
@@ -13,49 +14,53 @@ void initMatrix(void)
 
 	// clear structure of any lingering data
 	initScreen();
-	fillScreen(3, 6); // purple and teal
-
 
 	setup_DMA2_S1();
 	setup_TIM8(1, 2);
 }
 
-void fillScreen(uint8_t color1, uint8_t color2)
+
+void drawFrame(color_t frame[ROW][COL])
 {
-	for(int row = 0; row < SCREEN_ROW; row++)
+	for(uint8_t row = 0; row < ROW; row++)
 	{
-		for(int col = 0; col < SCREEN_COL; col++)
-		{
-			screen[row][col].rgb1 = color1;
-			screen[row][col].rgb2 = color2;
-		}
+			updateRow(row, frame[row]); // update all 32 rows according to the incoming frame
 	}
 }
 
-void updateRow(uint8_t r, uint8_t color)
+// takes a row 0-31 as input and maps each row to new color of incoming frame
+void updateRow(uint8_t r, color_t rowColors[COL])
 {
-	if(r < 16)
+	uint8_t tf_r;
+	tf_r = transformRowNum(r); // partial row transformation (still need to split by rgb1/rgb2!)
+
+	for(uint8_t col = 0; col < COL; col++)
 	{
-		for(int col = 0; col < SCREEN_COL; col++)
-		{
-			screen[r % 16][col].rgb1 = color;
-		}
+		updatePixel(tf_r, col, rowColors[col]);
+	}
+}
+
+// update a particular pixel of the screen according to how the screen gets mapped into the matrix pins via DMA
+void updatePixel(uint8_t tf_r, uint8_t c, color_t color)
+{
+	uint8_t tf_c = c * 2;
+	if(tf_r < 16)
+	{
+		screen[tf_r % 16][tf_c].rgb1     = color;
+		screen[tf_r % 16][tf_c + 1].rgb1 = color;
 	}
 	else
 	{
-		for(int col = 0; col < SCREEN_COL; col++)
-		{
-			screen[r % 16][col].rgb2 = color;
-		}
+		screen[tf_r % 16][tf_c].rgb2     = color;
+		screen[tf_r % 16][tf_c + 1].rgb2 = color;
 	}
-
 }
 
 void initScreen()
 {
-	for(int row = 0; row < SCREEN_ROW; row++)
+	for(uint8_t row = 0; row < SCREEN_ROW; row++)
 	{
-		for(int col = 0; col < SCREEN_COL; col++)
+		for(uint8_t col = 0; col < SCREEN_COL; col++)
 		{
 			screen[row][col].dead = 0;
 			screen[row][col].rgb1 = 0;
@@ -87,6 +92,24 @@ void initScreen()
 	}
 }
 
+// this remapping is required because something is screwy in the LED matrix HW
+uint8_t transformRowNum(uint8_t r)
+{
+	if(r == 0)
+	{
+		r = 15;
+	}
+	else if(r == 16)
+	{
+		r = 31;
+	}
+	else
+	{
+		r--;
+	}
+	return r;
+}
+
 void setup_TIM8(uint8_t psc, uint8_t arr)
 {
 	// Turn on the clock for timer 8
@@ -112,9 +135,11 @@ void setup_DMA2_S1(void)
   DMA2_Stream1 -> CR  |= DMA_SxCR_CIRC;
   DMA2_Stream1 -> CR  |= DMA_SxCR_DIR_0; // memory to peripheral transfer
 
+
   DMA2_Stream1 -> NDTR = SCREEN_ROW * SCREEN_COL; // 2048 transfers
   DMA2_Stream1 -> PAR  = (uint32_t) (&(GPIOE->ODR));
   DMA2_Stream1 -> M0AR = (uint32_t) screen;
+
   DMA2_Stream1 -> CR  |= DMA_SxCR_EN; // Enable DMA
 }
 
