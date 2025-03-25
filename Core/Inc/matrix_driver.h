@@ -11,6 +11,8 @@
 #define SCREEN_ROW ROW / 2
 #define SCREEN_COL COL * 2
 
+#define NUM_COLORS 8
+
 // structure for DMA output (16 bits/ 2B)
 typedef struct
 {

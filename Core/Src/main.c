@@ -54,8 +54,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 
-color_t currFrame [ROW][COL];
-color_t nextFrame [ROW][COL];
+color_t fftFrame [ROW][COL];
 
 
 
@@ -103,35 +102,7 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   initMatrix();
-  for(uint8_t row = 0; row < ROW; row++)
-  {
-  		for(uint8_t col = 0; col < COL; col++)
-  		{
-  			if(row % 2)
-  			{
-    			currFrame[row][col] = PURPLE;
-  			}
-  			else
-  			{
-  				currFrame[row][col] = RED;
-  			}
-  		}
-  }
-
-  for(uint8_t row = 0; row < ROW; row++)
-  {
-    for(uint8_t col = 0; col < COL; col++)
-    {
-    	if(row % 2)
-    	{
-      	nextFrame[row][col] = TEAL;
-    	}
-    	else
-    	{
-    		nextFrame[row][col] = GREEN;
-    	}
-    }
-   }
+	initFFT();
 
   /* USER CODE END 2 */
 
@@ -142,10 +113,13 @@ int main(void)
 
     /* USER CODE END WHILE */
 
-  	drawFrame(nextFrame);
-  	HAL_Delay(50);
-  	drawFrame(currFrame);
-  	HAL_Delay(50);
+  	computeFFTScreen(getTable(1), 256, fftFrame);
+  	drawFrame(fftFrame);
+  	HAL_Delay(200);
+
+  	computeFFTScreen(getTable(2), 256, fftFrame);
+  	drawFrame(fftFrame);
+  	HAL_Delay(200);
 
 
     /* USER CODE BEGIN 3 */
