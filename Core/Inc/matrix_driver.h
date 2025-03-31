@@ -13,6 +13,12 @@
 
 #define NUM_COLORS 8
 
+#define INTERP_STEPS 10
+#define MAX_FRAME_BUFFERS 2   // We need to store at least 2 frames for interpolation
+#define CURR_FRAME 0
+#define PREV_FRAME 1
+#define TRUE 1
+#define FALSE 0
 // structure for DMA output (16 bits/ 2B)
 typedef struct
 {
@@ -24,6 +30,13 @@ typedef struct
 	unsigned int lat:   1;
 	unsigned int clk:   1;
 } hub75_gpio_t;
+
+// Structure to represent a single frame of data
+typedef struct {
+    color_t pixels[ROW][COL];   // Full frame pixel data
+    uint8_t isValid;            // Flag to indicate if the frame contains valid data
+} FrameBuffer;
+
 
 // Colors enumerated as 0bRBG
 typedef enum
@@ -46,8 +59,17 @@ void updatePixel(uint8_t, uint8_t, color_t);
 void initScreen(void);
 uint8_t transformRowNum(uint8_t);
 
+void initFrameBuffers(void);
+void storeFrame(color_t newFrame[ROW][COL]);
+void interpolateFrame(float factor, color_t outputFrame[ROW][COL], color_t barColor);
+void drawInterpFrame(float factor);
+
 // STM32 Peripheral Settings
 void setup_TIM8(uint8_t, uint8_t);
 void setup_DMA2_S1(void);
+
+
+// External declarations
+extern FrameBuffer frameBuffers[MAX_FRAME_BUFFERS];  // [0] = previous frame, [1] = current frame
 
 #endif

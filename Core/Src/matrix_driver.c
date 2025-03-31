@@ -1,11 +1,12 @@
 
 #include "matrix_driver.h"
+#include "fft_driver.h"
 #include <string.h>
 
 // structure to contain frame data ready to be directly DMA'ed to matrix pins
 hub75_gpio_t screen [SCREEN_ROW][SCREEN_COL];
-
-
+// structure to contain current and previous frame data
+FrameBuffer frameBuffers[MAX_FRAME_BUFFERS];
 
 void initMatrix(void)
 {
@@ -109,6 +110,151 @@ uint8_t transformRowNum(uint8_t r)
 	}
 	return r;
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Initialize frame buffers for interpolation
+ */
+void initFrameBuffers(void)
+{
+    //Initialize each frame buffer in the array
+    //  Mark frames as invalid to start
+	//  Set all pixels to BLACK
+	for (int frame = 0; frame < MAX_FRAME_BUFFERS; frame++) {
+		frameBuffers[frame].isValid = FALSE;
+		for (int row = 0; row < ROW; row++) {
+			for (int col = 0; col < COL; col++) {
+				frameBuffers[frame].pixels[row][col] = BLACK;
+			}
+		}
+	}
+}
+
+/**
+ * @brief Store a new frame, shifting the previous one
+ *
+ * @param newFrame Pointer to the new frame data to store
+ */
+void storeFrame(color_t newFrame[ROW][COL])
+{
+    // If we already have a current frame, move it to previous position
+    if (frameBuffers[CURR_FRAME].isValid) {
+        // Copy current frame to previous frame slot
+        for (int row = 0; row < ROW; row++) {
+            for (int col = 0; col < COL; col++) {
+                frameBuffers[PREV_FRAME].pixels[row][col] = frameBuffers[CURR_FRAME].pixels[row][col];
+            }
+        }
+        // Mark previous frame as valid
+        frameBuffers[0].isValid = 1;
+    }
+
+    // Copy new frame into current frame slot
+    for (int row = 0; row < ROW; row++) {
+        for (int col = 0; col < COL; col++) {
+            frameBuffers[CURR_FRAME].pixels[row][col] = newFrame[row][col];
+        }
+    }
+
+    // Mark current frame as valid
+    frameBuffers[1].isValid = 1;
+}
+
+/**
+ * @brief Create an interpolated frame between stored frames
+ *
+ * @param factor Interpolation factor (0.0 = previous frame, 1.0 = current frame)
+ * @param outputFrame Buffer to store the interpolated frame
+ */
+void interpolateFrame(float factor, color_t outputFrame[ROW][COL], color_t barColor)
+{
+	// Edge case for when only 1 frame is available
+	if (frameBuffers[PREV_FRAME].isValid != TRUE) {
+		if (frameBuffers[CURR_FRAME].isValid == TRUE) {
+			for (int row = 0; row < ROW; row++) {
+				for (int col = 0; col < COL; col++) {
+					outputFrame[row][col] = frameBuffers[1].pixels[row][col];
+				}
+			}
+		}
+		// No frames are available
+		else {
+			for (int row = 0; row < ROW; row++) {
+				for (int col = 0; col < COL; col++) {
+					outputFrame[row][col] = BLACK;
+				}
+			}
+		return;
+		}
+	// Both frames are valid
+
+	// clear the output frame
+	for (int row = 0; row < ROW; row++) {
+		for (int col = 0; col < COL; col++) {
+			outputFrame[row][col] = BLACK;
+		}
+	}
+
+    // Process each column individualy
+    for (int bin = 0; bin < (COL / BIN_WIDTH_SCREEN); bin++) {
+
+    	// Calculate the column range for this bin
+        int startCol = bin * BIN_WIDTH_SCREEN;
+        int endCol = startCol + BIN_WIDTH_SCREEN - 1;
+
+        // Find height of this bin in prev frame
+        int prevHeight = 0;
+        for (int row = ROW - 1; row >= 0; row--) {
+            if (frameBuffers[0].pixels[row][startCol] != BLACK) {
+                prevHeight = ROW - row;
+                break;
+            }
+        }
+
+        // Find the height of this bin in curr frame
+        int currHeight = 0;
+        for (int row = ROW - 1; row >= 0; row--) {
+            if (frameBuffers[1].pixels[row][startCol] != BLACK) {
+                currHeight = ROW - row;
+                break;
+            }
+        }
+
+        // Calculate interpolated height
+        float interpHeight = prevHeight * (1.0f - factor) + currHeight * factor;
+        int targetHeight = (int)round(interpHeight);
+
+        // Draw the interpolated bar for this bin across all its columns
+        for (int col = startCol; col <= endCol; col++) {
+            for (int h = 0; h < targetHeight; h++) {
+                int row = ROW - 1 - h;
+                if (row >= 0) {
+                    outputFrame[row][col] = barColor; // Alex look here - not sure how to git color selection into this
+                }
+            }
+        }
+    }
+}
+
+/**
+ * @brief Interpolate and draw a frame in one step
+ *
+ * @param factor Interpolation factor (0.0 = previous frame, 1.0 = current frame)
+ */
+void drawInterpFrame(float factor)
+{
+
+	// Create temp buffer for the interpolated frame
+	color_t interpFrame[ROW][COL];
+
+	// Generate the interpolated frame
+	interpolateFrame(factor, interpFrame, color);
+
+	// Draw it to display
+	drawFrame(interpFrame);
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void setup_TIM8(uint8_t psc, uint8_t arr)
 {

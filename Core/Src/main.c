@@ -74,57 +74,77 @@ color_t fftFrame [ROW][COL];
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_USART3_UART_Init();
-  MX_USB_OTG_FS_PCD_Init();
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_USART3_UART_Init();
+	MX_USB_OTG_FS_PCD_Init();
 
 
-  /* USER CODE BEGIN 2 */
-  initMatrix();
+	/* USER CODE BEGIN 2 */
+	initMatrix();
 	initFFT();
+	initFrameBuffers();
+	/* USER CODE END 2 */
 
-  /* USER CODE END 2 */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1)
+	{
+	  // Step 1: Create and store first frame
+	  computeFFTScreen(getTable(1), 256, fftFrame);
+	  storeFrame(fftFrame);
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	  // Step 2: Create and store second frame
+	  computeFFTScreen(getTable(2), 256, fftFrame);
+	  storeFrame(fftFrame);
 
-    /* USER CODE END WHILE */
+	  // Step 3: Generate interpolated frames and display them
+	  for (int step = 0; step < INTERP_STEPS; step++)
+	  {
+		  // Calculate interpolation factor (0.0 to 1.0)
+		  float factor = (float)step / (float)(INTERP_STEPS - 1);
 
-  	computeFFTScreen(getTable(1), 256, fftFrame);
-  	drawFrame(fftFrame);
-  	HAL_Delay(200);
+		  // Draw the interpolated frame
+		  drawInterpFrame(factor);
 
-  	computeFFTScreen(getTable(2), 256, fftFrame);
-  	drawFrame(fftFrame);
-  	HAL_Delay(200);
+		  // Short delay between frames
+		  HAL_Delay(200 / INTERP_STEPS);
+	  }
 
+	  // Step 4: Now transition back
+	  // First compute and store sine wave 1 again
+	  computeFFTScreen(getTable(1), 256, fftFrame);
+	  storeFrame(fftFrame);
 
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+	  // Then interpolate back
+	  for (int step = 0; step < INTERP_STEPS; step++)
+	  {
+		  float factor = (float)step / (float)(INTERP_STEPS - 1);
+		  drawInterpFrame(factor);
+		  HAL_Delay(200 / INTERP_STEPS);
+	  }
+	}
+	/* USER CODE END 3 */
 }
 
 
