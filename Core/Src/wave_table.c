@@ -74,7 +74,7 @@ float sinLUT[256] = {
 /** Generated using Dr LUT - Free Lookup Table Generator
   * https://github.com/ppelikan/drlut
   **/
-// Formula: sin(16*pi*t/T)
+// Formula: sin(2*8*pi*t/T)
 float sinLUT2[256] = {
  0.0000000000, 0.1950903220, 0.3826834324, 0.5555702330,
  0.7071067812, 0.8314696123, 0.9238795325, 0.9807852804,
@@ -148,7 +148,7 @@ float * getTable(int table)
 	{
 		return sinLUT;
 	}
-	else
+	else if(table == 2)
 	{
 		return sinLUT2;
 	}

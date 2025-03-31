@@ -104,6 +104,7 @@ int main(void)
 	initMatrix();
 	initFFT();
 	initFrameBuffers();
+	initDAC();
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -318,11 +319,17 @@ static void MX_GPIO_Init(void)
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
-  // GPIOE [RGB1/RGB2 and addr pins for matrix]
+  // GPIOE [RGB1/RGB2, addr, clk, lat, and oe pins for matrix]
   GPIO_InitStruct.Pin  = GPIO_PIN_All & ~(GPIO_PIN_0 | GPIO_PIN_1);
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  // GPIOA_4 is DAC_OUT1 [analog sound wave output]
+  GPIO_InitStruct.Pin  = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE END MX_GPIO_Init_2 */
 }

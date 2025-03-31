@@ -66,7 +66,7 @@ void interpolateFrame(float factor, color_t outputFrame[ROW][COL]);
 void drawInterpFrame(float factor);
 
 // STM32 Peripheral Settings
-void setup_TIM8(uint8_t, uint8_t);
+void setup_TIM8(uint16_t, uint16_t);
 void setup_DMA2_S1(void);
 
 

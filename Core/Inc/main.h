@@ -31,6 +31,7 @@ extern "C" {
 #include "matrix_driver.h"
 #include "fft_driver.h"
 #include "wave_table.h"
+#include "dac_output.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
