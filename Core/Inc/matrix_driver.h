@@ -3,11 +3,12 @@
 
 #include "stm32f4xx_hal.h"
 
-// 32 x 64 LED matrix
+// 32 x 64 LED matrix for high-level abstracted "frame" data structure
 #define ROW 32
 #define COL 64
 
 // screen data structure only needs half the rows, but needs twice the cols to allow room for clk pin to change
+// for low-level led matrix data structure
 #define SCREEN_ROW ROW / 2
 #define SCREEN_COL COL * 2
 
@@ -31,12 +32,6 @@ typedef struct
 	unsigned int clk:   1;
 } hub75_gpio_t;
 
-// Structure to represent a single frame of data
-typedef struct {
-    color_t pixels[ROW][COL];   // Full frame pixel data
-    uint8_t isValid;            // Flag to indicate if the frame contains valid data
-} FrameBuffer;
-
 
 // Colors enumerated as 0bRBG
 typedef enum
@@ -51,6 +46,12 @@ typedef enum
 	WHITE
 } color_t;
 
+// Structure to represent a single frame of data
+typedef struct {
+    color_t pixels[ROW][COL];   // Full frame pixel data
+    uint8_t isValid;            // Flag to indicate if the frame contains valid data
+} FrameBuffer;
+
 // Driver Functions
 void initMatrix(void);
 void drawFrame(color_t [ROW][COL]);
@@ -61,7 +62,7 @@ uint8_t transformRowNum(uint8_t);
 
 void initFrameBuffers(void);
 void storeFrame(color_t newFrame[ROW][COL]);
-void interpolateFrame(float factor, color_t outputFrame[ROW][COL], color_t barColor);
+void interpolateFrame(float factor, color_t outputFrame[ROW][COL]);
 void drawInterpFrame(float factor);
 
 // STM32 Peripheral Settings
@@ -70,6 +71,6 @@ void setup_DMA2_S1(void);
 
 
 // External declarations
-extern FrameBuffer frameBuffers[MAX_FRAME_BUFFERS];  // [0] = previous frame, [1] = current frame
+extern FrameBuffer frameBuffers[MAX_FRAME_BUFFERS];  // [0] = current frame, [1] = previous frame
 
 #endif
