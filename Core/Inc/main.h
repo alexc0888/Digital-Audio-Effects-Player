@@ -28,14 +28,15 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include "matrix_driver.h"
 #include "fft_driver.h"
 #include "wave_table.h"
 #include "dac_output.h"
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
+#include "my_sdcard.h"
+#include "my_debug.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

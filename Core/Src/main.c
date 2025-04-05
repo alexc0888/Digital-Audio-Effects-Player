@@ -18,10 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define MAX_FILE_NAME_LEN _MAX_LFN + 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -40,25 +41,31 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+SD_HandleTypeDef hsd;
+DMA_HandleTypeDef hdma_sdio_rx;
+DMA_HandleTypeDef hdma_sdio_tx;
+
 UART_HandleTypeDef huart3;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-
+color_t fftFrame [ROW][COL];
+char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
+int numSongs;
+const char test_filename[] = "test.txt";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
-
-color_t fftFrame [ROW][COL];
-
-
-
+static void MX_SDIO_SD_Init(void);
 /* USER CODE BEGIN PFP */
+
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
 /* USER CODE END PFP */
 
@@ -74,80 +81,168 @@ color_t fftFrame [ROW][COL];
 int main(void)
 {
 
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE BEGIN SysInit */
 
-	/* USER CODE END SysInit */
+  /* USER CODE END SysInit */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_USART3_UART_Init();
-	MX_USB_OTG_FS_PCD_Init();
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_USART3_UART_Init();
+  MX_USB_OTG_FS_PCD_Init();
+  MX_SDIO_SD_Init();
+  MX_FATFS_Init();
+  /* USER CODE BEGIN 2 */
+
+  // Check SD card details
+  DEBUG_PRINTF("\n\rSD Card Information:\r\n");
+  DEBUG_PRINTF("Block size         : %lu\r\n", hsd.SdCard.BlockSize);
+  DEBUG_PRINTF("Block number       : %lu\r\n", hsd.SdCard.BlockNbr);
+
+  // Try mounting the card...
+  if(sdMount() != SD_SUCCESS)
+  {
+    Error_Handler();
+  }
+
+  // grab a list of all the songs currently on-file in the SD card
+  if(sdGetFileList(songList, SONG_DIR, &numSongs) != SD_SUCCESS)
+  {
+  	Error_Handler();
+  }
+  DEBUG_PRINTF("Printing all the found songs: \r\n");
+  for(int i = 0; i < numSongs; i++)
+  {
+  	DEBUG_PRINTF("%s\r\n", songList[i]);
+  }
 
 
-	/* USER CODE BEGIN 2 */
+
+  char test[4] = "abcd";
+  char rdBuff[4];
+  uint32_t wbytes;
+  uint32_t rbytes;
+
+  // Check if the file exists first
+  if(f_open(&SDFile, test_filename, FA_OPEN_EXISTING | FA_READ) == FR_OK)
+  {
+    if(f_read(&SDFile, rdBuff, sizeof(test), (void*) &rbytes) == FR_OK)
+    {
+      printf("Read out the string: '");
+      for(int i = 0; i < 4; i++)
+      {
+        printf("%c", rdBuff[i]);
+      }
+      printf("'\r\n");
+      f_close(&SDFile);
+    }
+    else
+    {
+      printf("Failed to read\r\n");
+      Error_Handler();
+    }
+  }
+
+  // The file doesn't exist, let's create it
+  else
+  {
+		if(f_open(&SDFile, test_filename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+		{
+			if(f_write(&SDFile, test, sizeof(test), (void*) &wbytes) == FR_OK)
+			{
+				printf("Created file: %s\r\n", test_filename);
+				printf("Wrote out the string: '");
+				for(int i = 0; i < 4; i++)
+				{
+					printf("%c", test[i]);
+				}
+				printf("'\r\n");
+				f_close(&SDFile);
+			}
+			else
+			{
+				printf("Failed to write\r\n");
+				Error_Handler();
+			}
+		}
+		else
+		{
+			printf("Failed to create file: %s\r\n", test_filename);
+			Error_Handler();
+		}
+  }
+
+
+  // exit
+  f_mount(NULL, "", 0);
+
 	initMatrix();
 	initFFT();
 	initFrameBuffers();
 	initDAC();
-	/* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
-	while (1)
-	{
-	  // Step 1: Create and store first frame
-	  computeFFTScreen(getTable(1), 256, fftFrame);
-	  storeFrame(fftFrame);
+  /* USER CODE END 2 */
 
-	  // Step 2: Create and store second frame
-	  computeFFTScreen(getTable(2), 256, fftFrame);
-	  storeFrame(fftFrame);
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
 
-	  // Step 3: Generate interpolated frames and display them
-	  for (int step = 0; step < INTERP_STEPS; step++)
-	  {
-		  // Calculate interpolation factor (0.0 to 1.0)
-		  float factor = (float)step / (float)(INTERP_STEPS - 1);
+    /* USER CODE BEGIN 3 */
+  	// Step 1: Create and store first frame
+  	computeFFTScreen(getTable(1), 256, fftFrame);
+  	storeFrame(fftFrame);
 
-		  // Draw the interpolated frame
-		  drawInterpFrame(factor);
+  	// Step 2: Create and store second frame
+  	computeFFTScreen(getTable(2), 256, fftFrame);
+  	storeFrame(fftFrame);
 
-		  // Short delay between frames
-		  HAL_Delay(200 / INTERP_STEPS);
-	  }
+  	// Step 3: Generate interpolated frames and display them
+  	for(int step = 0; step < INTERP_STEPS; step++)
+  	{
+  	  // Calculate interpolation factor (0.0 to 1.0)
+  	  float factor = (float)step / (float)(INTERP_STEPS - 1);
 
-	  // Step 4: Now transition back
-	  // First compute and store sine wave 1 again
-	  computeFFTScreen(getTable(1), 256, fftFrame);
-	  storeFrame(fftFrame);
+  	  // Draw the interpolated frame
+  	  drawInterpFrame(factor);
 
-	  // Then interpolate back
-	  for (int step = 0; step < INTERP_STEPS; step++)
-	  {
-		  float factor = (float)step / (float)(INTERP_STEPS - 1);
-		  drawInterpFrame(factor);
-		  HAL_Delay(200 / INTERP_STEPS);
-	  }
-	}
-	/* USER CODE END 3 */
+  	  // Short delay between frames
+      HAL_Delay(200 / INTERP_STEPS);
+  	}
+
+  	// Step 4: Now transition back
+  	// First compute and store sine wave 1 again
+  	computeFFTScreen(getTable(1), 256, fftFrame);
+  	storeFrame(fftFrame);
+
+  	// Then interpolate back
+  	for(int step = 0; step < INTERP_STEPS; step++)
+  	{
+  	  float factor = (float)step / (float)(INTERP_STEPS - 1);
+  	  drawInterpFrame(factor);
+  	  HAL_Delay(200 / INTERP_STEPS);
+  	}
+
+  }
+  /* USER CODE END 3 */
 }
-
 
 /**
   * @brief System Clock Configuration
@@ -193,6 +288,43 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief SDIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SDIO_SD_Init(void)
+{
+
+  /* USER CODE BEGIN SDIO_Init 0 */
+
+  /* USER CODE END SDIO_Init 0 */
+
+  /* USER CODE BEGIN SDIO_Init 1 */
+
+  /* USER CODE END SDIO_Init 1 */
+  hsd.Instance = SDIO;
+  hsd.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;
+  hsd.Init.ClockBypass = SDIO_CLOCK_BYPASS_DISABLE;
+  hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
+  hsd.Init.BusWide = SDIO_BUS_WIDE_4B;
+  hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
+  hsd.Init.ClockDiv = 4;
+  /* USER CODE BEGIN SDIO_Init 2 */
+  // First init with 1B bus - SD card will not initialize with 4 bits
+  hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
+  if (HAL_SD_Init(&hsd) != HAL_OK) {
+      Error_Handler();
+  }
+
+  // Now we can switch to 4 bit mode
+  if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK) {
+      Error_Handler();
+  }
+  /* USER CODE END SDIO_Init 2 */
+
 }
 
 /**
@@ -265,6 +397,25 @@ static void MX_USB_OTG_FS_PCD_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -279,11 +430,10 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
@@ -317,6 +467,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PC6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   // GPIOE [RGB1/RGB2, addr, clk, lat, and oe pins for matrix]
@@ -335,6 +491,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  *   None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART3 and Loop until the end of transmission */
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
+
+  return ch;
+}
 
 /* USER CODE END 4 */
 
