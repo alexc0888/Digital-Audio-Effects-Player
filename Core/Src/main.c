@@ -53,6 +53,7 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 color_t fftFrame [ROW][COL];
 char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
 int numSongs;
+wav_header_t songInfo;
 int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
 /* USER CODE END PV */
 
@@ -136,6 +137,8 @@ int main(void)
   {
   	Error_Handler();
   }
+  parseWavHeader(&songInfo);
+
   if(sdReadSong(songBuffer) != SD_SUCCESS)
   {
   	Error_Handler();

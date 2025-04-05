@@ -118,7 +118,6 @@ int sdLoadSong(char *songName)
 	strcat(songPath, songName);
 
 	int status = sdOpenFile(songPath);
-	// In the future, we'll want to call a function to parse the .wav metadata here...
 	return status;
 }
 
