@@ -53,7 +53,7 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 color_t fftFrame [ROW][COL];
 char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
 int numSongs;
-const char test_filename[] = "test.txt";
+int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,65 +132,21 @@ int main(void)
   	DEBUG_PRINTF("%s\r\n", songList[i]);
   }
 
-
-
-  char test[4] = "abcd";
-  char rdBuff[4];
-  uint32_t wbytes;
-  uint32_t rbytes;
-
-  // Check if the file exists first
-  if(f_open(&SDFile, test_filename, FA_OPEN_EXISTING | FA_READ) == FR_OK)
+  if(sdLoadSong(songList[0]) != SD_SUCCESS)
   {
-    if(f_read(&SDFile, rdBuff, sizeof(test), (void*) &rbytes) == FR_OK)
-    {
-      printf("Read out the string: '");
-      for(int i = 0; i < 4; i++)
-      {
-        printf("%c", rdBuff[i]);
-      }
-      printf("'\r\n");
-      f_close(&SDFile);
-    }
-    else
-    {
-      printf("Failed to read\r\n");
-      Error_Handler();
-    }
+  	Error_Handler();
   }
-
-  // The file doesn't exist, let's create it
-  else
+  if(sdReadSong(songBuffer) != SD_SUCCESS)
   {
-		if(f_open(&SDFile, test_filename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
-		{
-			if(f_write(&SDFile, test, sizeof(test), (void*) &wbytes) == FR_OK)
-			{
-				printf("Created file: %s\r\n", test_filename);
-				printf("Wrote out the string: '");
-				for(int i = 0; i < 4; i++)
-				{
-					printf("%c", test[i]);
-				}
-				printf("'\r\n");
-				f_close(&SDFile);
-			}
-			else
-			{
-				printf("Failed to write\r\n");
-				Error_Handler();
-			}
-		}
-		else
-		{
-			printf("Failed to create file: %s\r\n", test_filename);
-			Error_Handler();
-		}
+  	Error_Handler();
   }
 
 
   // exit
-  f_mount(NULL, "", 0);
+  if(sdUnmount() != SD_SUCCESS)
+  {
+  	Error_Handler();
+  }
 
 	initMatrix();
 	initFFT();
