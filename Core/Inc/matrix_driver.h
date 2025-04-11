@@ -14,7 +14,7 @@
 
 #define NUM_COLORS 8
 
-#define INTERP_STEPS 10
+#define INTERP_STEPS 4
 #define MAX_FRAME_BUFFERS 2   // We need to store at least 2 frames for interpolation
 #define CURR_FRAME 0
 #define PREV_FRAME 1

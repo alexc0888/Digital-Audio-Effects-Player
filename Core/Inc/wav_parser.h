@@ -69,7 +69,7 @@ int parseWavHeader(wav_header_t *);
 wav_error_code_t verifyWavHeader(wav_header_t *);
 int skipListSubChunk(wav_header_t *);
 void clearWavHeader(wav_header_t *);
-int readWavHeader(uint32_t *, uint32_t);
+int readWavHeader(char *, uint32_t);
 
 int checkSysEndianness();
 

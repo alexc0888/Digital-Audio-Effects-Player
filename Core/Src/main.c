@@ -55,6 +55,9 @@ char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
 int numSongs;
 wav_header_t songInfo;
 int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
+float   songBufferFlt[SONG_BUFF_SIZE];
+int songPlaying = FALSE;
+int status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,9 +68,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_SDIO_SD_Init(void);
 /* USER CODE BEGIN PFP */
-
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -111,6 +112,7 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
+
   // Check SD card details
   DEBUG_PRINTF("\n\rSD Card Information:\r\n");
   DEBUG_PRINTF("Block size         : %lu\r\n", hsd.SdCard.BlockSize);
@@ -133,16 +135,56 @@ int main(void)
   	DEBUG_PRINTF("%s\r\n", songList[i]);
   }
 
-  if(sdLoadSong(songList[0]) != SD_SUCCESS)
+  if(sdLoadSong(songList[4]) != SD_SUCCESS)
   {
   	Error_Handler();
   }
-  parseWavHeader(&songInfo);
+  if(parseWavHeader(&songInfo) != SD_SUCCESS)
+  {
+  	Error_Handler();
+  }
 
-  if(sdReadSong(songBuffer) != SD_SUCCESS)
+  songPlaying = TRUE;
+	initMatrix();
+	initFFT();
+	initFrameBuffers();
+	initDAC();
+  while(songPlaying)
   {
-  	Error_Handler();
+  	status = sdReadSong(songBuffer);
+    if(status == SD_FAIL)
+    {
+    	Error_Handler();
+    }
+    else if(status == SD_EOF) // fetched last bit of the song, it will end after this iteration
+    {
+    	songPlaying = FALSE;
+    }
+
+    // create a floating point buffer of the sample for data processing + FFT
+    for(int j = 0; j < SONG_BUFF_SIZE; j++)
+    {
+    	songBufferFlt[j] = ((float) songBuffer[j] / (float) MAX_VAL_INT16_T) * MAX_AMPLITUDE; // take as a fraction of 3.3V
+    }
+
+    // Compute FFT and draw frames
+    // Step 1: Create and store first frame
+    computeFFTScreen(songBufferFlt, SONG_BUFF_SIZE / 4, fftFrame);
+    storeFrame(fftFrame);
+
+    // Step 2: Generate interpolated frames and display them
+    for(int step = 0; step < INTERP_STEPS; step++)
+    {
+      // Calculate interpolation factor (0.0 to 1.0)
+      float factor = (float)step / (float)(INTERP_STEPS - 1);
+
+      // Draw the interpolated frame
+      drawInterpFrame(factor);
+    }
+    while(!dacDONE); // ensure DAC is finished prior to transmitting again
+    fillDacBuffer(songBuffer);
   }
+
 
 
   // exit
@@ -151,10 +193,6 @@ int main(void)
   	Error_Handler();
   }
 
-	initMatrix();
-	initFFT();
-	initFrameBuffers();
-	initDAC();
 
   /* USER CODE END 2 */
 
@@ -165,39 +203,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  	// Step 1: Create and store first frame
-  	computeFFTScreen(getTable(1), 256, fftFrame);
-  	storeFrame(fftFrame);
-
-  	// Step 2: Create and store second frame
-  	computeFFTScreen(getTable(2), 256, fftFrame);
-  	storeFrame(fftFrame);
-
-  	// Step 3: Generate interpolated frames and display them
-  	for(int step = 0; step < INTERP_STEPS; step++)
-  	{
-  	  // Calculate interpolation factor (0.0 to 1.0)
-  	  float factor = (float)step / (float)(INTERP_STEPS - 1);
-
-  	  // Draw the interpolated frame
-  	  drawInterpFrame(factor);
-
-  	  // Short delay between frames
-      HAL_Delay(200 / INTERP_STEPS);
-  	}
-
-  	// Step 4: Now transition back
-  	// First compute and store sine wave 1 again
-  	computeFFTScreen(getTable(1), 256, fftFrame);
-  	storeFrame(fftFrame);
-
-  	// Then interpolate back
-  	for(int step = 0; step < INTERP_STEPS; step++)
-  	{
-  	  float factor = (float)step / (float)(INTERP_STEPS - 1);
-  	  drawInterpFrame(factor);
-  	  HAL_Delay(200 / INTERP_STEPS);
-  	}
 
   }
   /* USER CODE END 3 */
@@ -383,6 +388,7 @@ static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /* USER CODE END MX_GPIO_Init_1 */
 

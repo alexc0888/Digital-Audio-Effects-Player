@@ -121,7 +121,7 @@ void computeFFT(float_t * inputSignal, uint16_t inputSize, float * fftMagBuffer,
         fftMagBuffer[index] = sqrt(
             (fftOutputBuffer[2*index] * fftOutputBuffer[2*index]) +
             (fftOutputBuffer[2*index + 1] * fftOutputBuffer[2*index + 1])
-        ) / (FFT_LEN * MAX_AMPLITUDE / 2); /* Normalize magnitude */
+        ) / (FFT_LEN * 1 / 2); /* Normalize magnitude */
 
         /* Calculate the actual frequency in Hz for this bin */
         fftFreqBuffer[index] = (float)((index * AUDIO_SAMPLE_RATE)) / ((float)FFT_LEN);

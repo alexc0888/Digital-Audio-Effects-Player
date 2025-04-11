@@ -10,7 +10,7 @@
 
 
 #define AUDIO_SAMPLE_RATE 44100
-#define MAX_AMPLITUDE 1 // 1 for now, but this really depends on bit-depth of the wav file and potentiometer
+#define MAX_AMPLITUDE 3.3 // 1 for now, but this really depends on bit-depth of the wav file and potentiometer
 
 #define FFT_LEN 32
 // strange things happen if we don't cast this define to an int

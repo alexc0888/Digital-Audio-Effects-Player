@@ -33,6 +33,8 @@ int sdReadFile(void *rdBuff, uint32_t bytesToRead)
 	if(bytesRead < bytesToRead)
 	{
 		DEBUG_PRINTF("NOTE: Reached end of file... ");
+		DEBUG_PRINTF("Read %d bytes.\r\n", bytesRead);
+		return SD_EOF;
 	}
 	DEBUG_PRINTF("Read %d bytes.\r\n", bytesRead);
 	return SD_SUCCESS;

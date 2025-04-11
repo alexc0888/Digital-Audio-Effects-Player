@@ -1,8 +1,8 @@
 #include "dac_output.h"
 
-uint16_t u16DataBuffer[256];
+uint16_t u16DataBuffer[SONG_BUFF_SIZE];
 int halfWord = 0;
-
+volatile int dacDONE = 1;
 
 void initDAC()
 {
@@ -17,20 +17,38 @@ void initDAC()
 	// PSC = 125
 	// ARR = 1000 (but then this is 3x faster for some reason, so I chose 3k, not 1k)
 	// use PSC = 5 and ARR = 145 for 44.1 KHz sampling rate later (maybe multiply ARR by 3 again..?)
-	setup_TIM6(125, 10);
-	initDataBuffer();
+//	setup_TIM6(125, 10);
+	initDacBuffer();
+	setup_TIM6(44, 47); // for sending 44,100 samples every second to DAC
 }
 
-void initDataBuffer()
+void initDacBuffer()
 {
-	float * waveTable = getTable(1);
-	float waveDCOffset;
-	for(int i = 0; i < 256; i++) // translate from float to uint16_t
+	for(int i = 0; i < SONG_BUFF_SIZE; i++)
 	{
-		waveDCOffset = waveTable[i] + 1; // wave table ranges form [-1, 1], so offset to +ve only
-		u16DataBuffer[i] = (waveDCOffset / 2) * (float)(MAX_VAL_UINT16_T); // take a ratio of the maximum possible value
+		u16DataBuffer[i] = 0;
+		u16DataBuffer[i] = 0;
 	}
 	// u16DataBuffer now represents 2^16 different voltage values ranging from [0, Vcc]
+}
+
+void fillDacBuffer(int16_t songBuff[SONG_BUFF_SIZE])
+{
+	int16_t min = 0x7fff;
+	for(int i = 0; i < 1024; i++)
+	{
+		if(songBuff[i] < min)
+		{
+			min = songBuff[i];
+		}
+	}
+	min = (min < 0) ? -1 * min : min;
+	for(int i = 0; i < SONG_BUFF_SIZE; i++)
+	{
+		u16DataBuffer[i] = songBuff[i] + min; // offset to +ve only
+		u16DataBuffer[i] = u16DataBuffer[i] >> 4; // we only have 12 bit DAC, so chop lowest 4 bits
+	}
+	dacDONE = 0;
 }
 
 void setup_TIM6(uint16_t psc, uint16_t arr)
@@ -56,8 +74,9 @@ void TIM6_DAC_IRQHandler()
 	DAC -> DHR12L1 = u16DataBuffer[halfWord]; // fill the DAC's DHR with next 16-bits (lower 4 get chopped off)
 	halfWord++;
 
-	if(halfWord == 256) // sent out all bytes of wave, start over
+	if(halfWord == SONG_BUFF_SIZE) // sent out all bytes of wave, start over
 	{
 		halfWord = 0;
+		dacDONE = 1;
 	}
 }
