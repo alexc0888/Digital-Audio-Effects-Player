@@ -13,7 +13,7 @@
 #define SONG_DIR   "0:/Songs"
 #define MAX_FILE_NUM 64 // maximum files allowed in a given directory (due to statically allocated arrays)
 #define MAX_PATH_LEN 256 + 1 // include an extra byte for the '/' to append file to pathname
-#define SD_BLOCK_SIZE 2048
+#define SD_BLOCK_SIZE 4096
 #define SONG_BUFF_SIZE SD_BLOCK_SIZE / (sizeof(int16_t))
 
 // This header includes wrapper functions that use the fatFS API

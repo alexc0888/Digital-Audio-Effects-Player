@@ -35,7 +35,7 @@ void initDacBuffer()
 void fillDacBuffer(int16_t songBuff[SONG_BUFF_SIZE])
 {
 	int16_t min = 0x7fff;
-	for(int i = 0; i < 1024; i++)
+	for(int i = 0; i < SONG_BUFF_SIZE; i++)
 	{
 		if(songBuff[i] < min)
 		{

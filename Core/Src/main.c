@@ -169,7 +169,7 @@ int main(void)
 
     // Compute FFT and draw frames
     // Step 1: Create and store first frame
-    computeFFTScreen(songBufferFlt, SONG_BUFF_SIZE / 4, fftFrame);
+    computeFFTScreen(songBufferFlt, SONG_BUFF_SIZE, fftFrame);
     storeFrame(fftFrame);
 
     // Step 2: Generate interpolated frames and display them
