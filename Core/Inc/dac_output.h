@@ -2,11 +2,7 @@
 #define __DAC_OUTPUT__
 
 #include "stm32f4xx_hal.h"
-#include "wave_table.h"
-#include "my_sdcard.h"
-
-#define MAX_VAL_UINT16_T 0xffff
-#define MAX_VAL_INT16_T  0x7fff
+#include "shared_consts.h"
 
 void initDAC();
 void initDacBuffer();

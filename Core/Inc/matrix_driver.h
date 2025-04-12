@@ -2,6 +2,7 @@
 #define __MATRIX_DRIVER__
 
 #include "stm32f4xx_hal.h"
+#include "shared_consts.h"
 
 // 32 x 64 LED matrix for high-level abstracted "frame" data structure
 #define ROW 32
@@ -18,8 +19,6 @@
 #define MAX_FRAME_BUFFERS 2   // We need to store at least 2 frames for interpolation
 #define CURR_FRAME 0
 #define PREV_FRAME 1
-#define TRUE 1
-#define FALSE 0
 // structure for DMA output (16 bits/ 2B)
 typedef struct
 {

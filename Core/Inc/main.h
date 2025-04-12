@@ -31,13 +31,14 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "shared_consts.h"
 #include "matrix_driver.h"
 #include "fft_driver.h"
 #include "wave_table.h"
 #include "dac_output.h"
 #include "my_sdcard.h"
-#include "my_debug.h"
 #include "wav_parser.h"
+#include "audio_processing.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

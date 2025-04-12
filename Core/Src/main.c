@@ -162,29 +162,27 @@ int main(void)
     }
 
     // create a floating point buffer of the sample for data processing + FFT
-    for(int j = 0; j < SONG_BUFF_SIZE; j++)
-    {
-    	songBufferFlt[j] = ((float) songBuffer[j] / (float) MAX_VAL_INT16_T) * MAX_AMPLITUDE; // take as a fraction of 3.3V
-    }
+    convS16Float(songBuffer, songBufferFlt, TRUE);
 
     // Compute FFT and draw frames
     // Step 1: Create and store first frame
-    computeFFTScreen(songBufferFlt, SONG_BUFF_SIZE / 4, fftFrame);
+    computeFFTScreen(songBufferFlt, SONG_BUFF_SIZE, fftFrame);
     storeFrame(fftFrame);
-
     // Step 2: Generate interpolated frames and display them
     for(int step = 0; step < INTERP_STEPS; step++)
     {
       // Calculate interpolation factor (0.0 to 1.0)
       float factor = (float)step / (float)(INTERP_STEPS - 1);
-
       // Draw the interpolated frame
       drawInterpFrame(factor);
     }
+    // Perform audio processing algorithms...
+
+    // Transform updated buffer back into int16_t
+    convS16Float(songBuffer, songBufferFlt, FALSE);
     while(!dacDONE); // ensure DAC is finished prior to transmitting again
     fillDacBuffer(songBuffer);
   }
-
 
 
   // exit

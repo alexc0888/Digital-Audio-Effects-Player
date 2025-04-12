@@ -1,6 +1,6 @@
 #include "dac_output.h"
 
-uint16_t u16DataBuffer[SONG_BUFF_SIZE];
+uint16_t DACBuffer[SONG_BUFF_SIZE];
 int halfWord = 0;
 volatile int dacDONE = 1;
 
@@ -26,10 +26,10 @@ void initDacBuffer()
 {
 	for(int i = 0; i < SONG_BUFF_SIZE; i++)
 	{
-		u16DataBuffer[i] = 0;
-		u16DataBuffer[i] = 0;
+		DACBuffer[i] = 0;
+		DACBuffer[i] = 0;
 	}
-	// u16DataBuffer now represents 2^16 different voltage values ranging from [0, Vcc]
+	// DACBuffer now represents 2^16 different voltage values ranging from [0, Vcc]
 }
 
 void fillDacBuffer(int16_t songBuff[SONG_BUFF_SIZE])
@@ -45,8 +45,8 @@ void fillDacBuffer(int16_t songBuff[SONG_BUFF_SIZE])
 	min = (min < 0) ? -1 * min : min;
 	for(int i = 0; i < SONG_BUFF_SIZE; i++)
 	{
-		u16DataBuffer[i] = songBuff[i] + min; // offset to +ve only
-		u16DataBuffer[i] = u16DataBuffer[i] >> 4; // we only have 12 bit DAC, so chop lowest 4 bits
+		DACBuffer[i] = songBuff[i] + min; // offset to +ve only
+		DACBuffer[i] = DACBuffer[i] >> 4; // we only have 12 bit DAC, so chop lowest 4 bits
 	}
 	dacDONE = 0;
 }
@@ -71,10 +71,10 @@ void TIM6_DAC_IRQHandler()
 	// acknowledge the pending bit for the interrupt
 	TIM6 -> SR &= ~TIM_SR_UIF;
 
-	DAC -> DHR12L1 = u16DataBuffer[halfWord]; // fill the DAC's DHR with next 16-bits (lower 4 get chopped off)
+	DAC -> DHR12L1 = DACBuffer[halfWord]; // fill the DAC's DHR with next 16-bits (lower 4 get chopped off)
 	halfWord++;
 
-	if(halfWord == SONG_BUFF_SIZE) // sent out all bytes of wave, start over
+	if(halfWord == SONG_BUFF_SIZE) // Finished sending out sample, wait for the next one.
 	{
 		halfWord = 0;
 		dacDONE = 1;
