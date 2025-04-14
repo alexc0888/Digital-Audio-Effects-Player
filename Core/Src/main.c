@@ -54,6 +54,7 @@ color_t fftFrame [ROW][COL];
 char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
 int numSongs;
 wav_header_t songInfo;
+
 int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
 float   songBufferFlt[SONG_BUFF_SIZE];
 int songPlaying = FALSE;
@@ -162,29 +163,42 @@ int main(void)
     }
 
     // create a floating point buffer of the sample for data processing + FFT
-    for(int j = 0; j < SONG_BUFF_SIZE; j++)
-    {
-    	songBufferFlt[j] = ((float) songBuffer[j] / (float) MAX_VAL_INT16_T) * MAX_AMPLITUDE; // take as a fraction of 3.3V
-    }
+    convS16Float(songBuffer, songBufferFlt, TRUE);
+
+    /* Note that the FFT drawing on the screen will be ever so slightly
+     * ahead of the audio playback from the DAC. The reason for this is
+     * because we have a producer-consumer situation with the audio samples going into the DAC
+     * (producer is CPU calling fillDacBuffer which adds a set of samples to the DACBufferQ, while
+     * the consumer is the DMA which pops from the DACBufferQ. This allows for maximum flexibility
+     * by ensuring two things:
+     * 1). The DMA will always have new audio to playback at the specified 44.1 KHz playback frequency
+     * 2). The CPU will not be blocked if the DMA is running behind on DMA playback. The CPU can simply
+     *     add the next set of samples to the DACBufferQ and move on to reading the next set of samples
+     *     from the SD Card.
+     *
+     * However, there is no producer-consumer situation set up for drawing the FFT to the LED matrix. Doing
+     * so combined with the interpolation would result in far too much memory usage. If we weren't limited to a relatively
+     * small set of memory, then we could more tightly synchronize the screen and audio. That being said, the desync is
+     * hardly noticeable (on the scale of milliseconds) so it really doesn't present a problem.
+     * */
 
     // Compute FFT and draw frames
     // Step 1: Create and store first frame
     computeFFTScreen(songBufferFlt, SONG_BUFF_SIZE, fftFrame);
     storeFrame(fftFrame);
-
     // Step 2: Generate interpolated frames and display them
     for(int step = 0; step < INTERP_STEPS; step++)
     {
       // Calculate interpolation factor (0.0 to 1.0)
       float factor = (float)step / (float)(INTERP_STEPS - 1);
-
       // Draw the interpolated frame
       drawInterpFrame(factor);
     }
-    while(!dacDONE); // ensure DAC is finished prior to transmitting again
-    fillDacBuffer(songBuffer);
-  }
+    // Perform audio processing algorithms on songBufferFlt...
 
+    // Producer - push the latest set of samples onto the DACBufferQ
+    fillDacBuffer(songBufferFlt);
+  }
 
 
   // exit
