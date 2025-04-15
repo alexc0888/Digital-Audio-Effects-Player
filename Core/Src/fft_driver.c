@@ -1,5 +1,5 @@
 #include "fft_driver.h"
-
+#include "audio_process.h"
 /* Global FFT handler from ARM CMSIS DSP library */
 arm_rfft_fast_instance_f32 fftHandler;
 
@@ -37,6 +37,10 @@ void computeFFTScreen(float * inputSignal, uint16_t inputSize, color_t frame[ROW
 
     /* Perform FFT calculation */
     computeFFT(inputSignal, inputSize, fftMagBuffer, fftFreqBuffer);
+
+    /* Copy the outputs to extern variables contained in audio_process.c - this is messy but more efficient, needs cleaning tho */
+    memcpy(audioFFTMagBuffer,fftMagBuffer,sizeof(float) * FFT_LEN);
+    memcpy(audioFFTFreqBuffer,fftFreqBuffer,sizeof(float) * FFT_LEN);
 
     /* Convert FFT magnitudes to pixel heights (scaled to fit LED matrix) */
     for(bin = 0; bin < FFT_LEN / 2; bin++)

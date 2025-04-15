@@ -195,7 +195,8 @@ int main(void)
       drawInterpFrame(factor);
     }
     // Perform audio processing algorithms on songBufferFlt...
-
+    // bassBoost modifies songBufferFlt
+    bassBoost(songBufferFlt);
     // Producer - push the latest set of samples onto the DACBufferQ
     fillDacBuffer(songBufferFlt);
   }
