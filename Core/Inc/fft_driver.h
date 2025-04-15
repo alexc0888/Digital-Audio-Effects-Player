@@ -10,7 +10,7 @@
 #include "shared_consts.h"
 
 // Defined constants
-#define FFT_LEN 32
+
 // strange things happen if we don't cast this define to an int
 #define BIN_WIDTH_SCREEN (int) (COL / (FFT_LEN / 2)) // the amount of pixel columns taken up per bin on screen
 

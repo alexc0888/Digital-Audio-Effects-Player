@@ -150,6 +150,7 @@ int main(void)
 	initFFT();
 	initFrameBuffers();
 	initDAC();
+	initAudioProcess();
   while(songPlaying)
   {
   	status = sdReadSong(songBuffer);

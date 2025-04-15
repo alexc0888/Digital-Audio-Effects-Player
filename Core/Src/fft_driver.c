@@ -39,8 +39,8 @@ void computeFFTScreen(float * inputSignal, uint16_t inputSize, color_t frame[ROW
     computeFFT(inputSignal, inputSize, fftMagBuffer, fftFreqBuffer);
 
     /* Copy the outputs to extern variables contained in audio_process.c - this is messy but more efficient, needs cleaning tho */
-    memcpy(audioFFTMagBuffer,fftMagBuffer,sizeof(float) * FFT_LEN);
-    memcpy(audioFFTFreqBuffer,fftFreqBuffer,sizeof(float) * FFT_LEN);
+    memcpy(audioFFTMagBuffer,fftMagBuffer,sizeof(float) * (FFT_LEN/2));
+    memcpy(audioFFTFreqBuffer,fftFreqBuffer,sizeof(float) * (FFT_LEN/2));
 
     /* Convert FFT magnitudes to pixel heights (scaled to fit LED matrix) */
     for(bin = 0; bin < FFT_LEN / 2; bin++)

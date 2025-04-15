@@ -8,12 +8,13 @@
 #define MAX_AMPLITUDE 3.3f
 #define SONG_BUFF_SIZE 2048 / (sizeof(int16_t))
 
-
+#define FFT_LEN 32
 
 #define TRUE 0x1
 #define FALSE 0x0
 
-
+// Defined constants
+#define FFT_LEN 32
 
 #define DEBUG_MODE
 
