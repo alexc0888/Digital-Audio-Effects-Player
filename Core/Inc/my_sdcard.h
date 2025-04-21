@@ -4,7 +4,6 @@
 #include "stm32f4xx_hal.h"
 #include "shared_consts.h"
 #include <string.h>
-#include <stdio.h>
 
 // SD Card related definitions
 #define SD_EOF     0x2

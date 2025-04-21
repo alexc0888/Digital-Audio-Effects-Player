@@ -147,7 +147,6 @@ int main(void)
 
   songPlaying = TRUE;
 	initMatrix();
-	initFFT();
 	initFrameBuffers();
 	initDAC();
 	initAudioProcess();
@@ -165,6 +164,9 @@ int main(void)
 
     // create a floating point buffer of the sample for data processing + FFT
     convS16Float(songBuffer, songBufferFlt, TRUE);
+
+    // Perform audio processing algorithms on songBufferFlt...
+// THIS IS BROKEN   applyAudioEffects(songBufferFlt, SONG_BUFF_SIZE);
 
     /* Note that the FFT drawing on the screen will be ever so slightly
      * ahead of the audio playback from the DAC. The reason for this is
@@ -195,9 +197,7 @@ int main(void)
       // Draw the interpolated frame
       drawInterpFrame(factor);
     }
-    // Perform audio processing algorithms on songBufferFlt...
-    // bassBoost modifies songBufferFlt
-    bassBoost(songBufferFlt);
+
     // Producer - push the latest set of samples onto the DACBufferQ
     fillDacBuffer(songBufferFlt);
   }

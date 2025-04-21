@@ -38,7 +38,7 @@ extern "C" {
 #include "dac_output.h"
 #include "my_sdcard.h"
 #include "wav_parser.h"
-#include "audio_process.h"
+#include "audio_processing.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

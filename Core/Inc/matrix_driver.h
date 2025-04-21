@@ -2,6 +2,7 @@
 #define __MATRIX_DRIVER__
 
 #include "stm32f4xx_hal.h"
+#include "fft_driver.h"
 #include "shared_consts.h"
 
 // 32 x 64 LED matrix for high-level abstracted "frame" data structure
@@ -53,6 +54,7 @@ typedef struct {
 
 // Driver Functions
 void initMatrix(void);
+void computeFFTScreen(float * inputSignal, uint16_t inputSize, color_t frame[ROW][COL]);
 void drawFrame(color_t [ROW][COL]);
 void updateRow(uint8_t, color_t [COL]);
 void updatePixel(uint8_t, uint8_t, color_t);

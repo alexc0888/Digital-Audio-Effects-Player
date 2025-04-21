@@ -1,6 +1,5 @@
 
 #include "matrix_driver.h"
-#include "fft_driver.h"
 #include <string.h>
 
 // structure to contain frame data ready to be directly DMA'ed to matrix pins
@@ -18,6 +17,73 @@ void initMatrix(void)
 
 	setup_DMA2_S1();
 	setup_TIM8(1, 2);
+}
+
+/**
+ * @brief Compute FFT and prepare visualization data for the LED matrix
+ *
+ * @param inputSignal Pointer to input signal data
+ * @param inputSize Size of the input signal array
+ * @param frame 2D array to store color data for the LED matrix
+ *
+ * This function processes the input signal through FFT, maps the frequency
+ * magnitudes to heights on the LED display, and fills the frame buffer with
+ * appropriate color values for visualization.
+ */
+void computeFFTScreen(float * inputSignal, uint16_t inputSize, color_t frame[ROW][COL])
+{
+    /* Buffers to store FFT results */
+    float fftMagBuffer[FFT_SCREEN_LEN / 2];   /* Magnitude of each frequency bin */
+    float fftFreqBuffer[FFT_SCREEN_LEN / 2];  /* Frequency value of each bin (Hz) */
+    float fftPhaseBuffer[FFT_SCREEN_LEN / 2]; /* Phase information of each frequency bin (radians) */
+
+    /* Buffer to store scaled magnitudes (heights) for display */
+    int binMagBuffer[FFT_SCREEN_LEN / 2];
+    uint16_t bin;
+
+    /* Perform FFT calculation */
+    computeFFT(inputSignal, inputSize, FFT_SCREEN_LEN, fftMagBuffer, fftFreqBuffer, fftPhaseBuffer);
+
+    /* Convert FFT magnitudes to pixel heights (scaled to fit LED matrix) */
+    for(bin = 0; bin < FFT_SCREEN_LEN / 2; bin++)
+    {
+        /* Scale magnitude to height in pixels (0 to ROW) */
+        binMagBuffer[bin] = round(fftMagBuffer[bin] * (float) ROW);
+    }
+    bin = 0; /* Reset bin counter for the display mapping loop */
+
+    /* Map FFT data to the LED matrix, starting from bottom row up */
+    for(int row = ROW - 1; row >= 0; row--)
+    {
+        for(int col = 0; col < COL; col++)
+        {
+            /* If current bin has magnitude at this height, color the pixel */
+            if(binMagBuffer[bin] != 0)
+            {
+                /* Choose color based on bin number (cycles through colors) */
+                frame[row][col] = (bin % (NUM_COLORS - 1)) + 1; /* Cycle through colors 1-7 (assuming 8 colors) */
+            }
+            else
+            {
+                /* No magnitude at this height, set pixel to black */
+                frame[row][col] = BLACK;
+            }
+
+            /* Check if we've finished drawing this frequency bin and should move to next */
+            if((col % BIN_WIDTH_SCREEN) == (BIN_WIDTH_SCREEN - 1))
+            {
+                if(binMagBuffer[bin] != 0)
+                {
+                    /* Decrement bin height as we've drawn one row of this bin */
+                    binMagBuffer[bin]--;
+                }
+                /* Move to next frequency bin */
+                bin++;
+            }
+        }
+        /* Reset to first frequency bin for the next row */
+        bin = 0;
+    }
 }
 
 

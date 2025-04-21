@@ -1,5 +1,5 @@
 #include "fft_driver.h"
-#include "audio_process.h"
+#include "audio_processing.h"
 /* Global FFT handler from ARM CMSIS DSP library */
 arm_rfft_fast_instance_f32 fftHandler;
 
@@ -9,79 +9,9 @@ arm_rfft_fast_instance_f32 fftHandler;
  * This function initializes the ARM CMSIS DSP FFT handler with the specified
  * FFT length (defined in FFT_LEN).
  */
-void initFFT(void)
+void initFFT(uint16_t fftLen)
 {
-    arm_rfft_fast_init_f32(&fftHandler, FFT_LEN);
-}
-
-/**
- * @brief Compute FFT and prepare visualization data for the LED matrix
- *
- * @param inputSignal Pointer to input signal data
- * @param inputSize Size of the input signal array
- * @param frame 2D array to store color data for the LED matrix
- *
- * This function processes the input signal through FFT, maps the frequency
- * magnitudes to heights on the LED display, and fills the frame buffer with
- * appropriate color values for visualization.
- */
-void computeFFTScreen(float * inputSignal, uint16_t inputSize, color_t frame[ROW][COL])
-{
-    /* Buffers to store FFT results */
-    float fftMagBuffer[FFT_LEN / 2];   /* Magnitude of each frequency bin */
-    float fftFreqBuffer[FFT_LEN / 2];  /* Frequency value of each bin (Hz) */
-
-    /* Buffer to store scaled magnitudes (heights) for display */
-    int binMagBuffer[FFT_LEN / 2];
-    uint8_t bin;
-
-    /* Perform FFT calculation */
-    computeFFT(inputSignal, inputSize, fftMagBuffer, fftFreqBuffer);
-
-    /* Copy the outputs to extern variables contained in audio_process.c - this is messy but more efficient, needs cleaning tho */
-    memcpy(audioFFTMagBuffer,fftMagBuffer,sizeof(float) * (FFT_LEN/2));
-    memcpy(audioFFTFreqBuffer,fftFreqBuffer,sizeof(float) * (FFT_LEN/2));
-
-    /* Convert FFT magnitudes to pixel heights (scaled to fit LED matrix) */
-    for(bin = 0; bin < FFT_LEN / 2; bin++)
-    {
-        /* Scale magnitude to height in pixels (0 to ROW) */
-        binMagBuffer[bin] = round(fftMagBuffer[bin] * (float) ROW);
-    }
-    bin = 0; /* Reset bin counter for the display mapping loop */
-
-    /* Map FFT data to the LED matrix, starting from bottom row up */
-    for(int row = ROW - 1; row >= 0; row--)
-    {
-        for(int col = 0; col < COL; col++)
-        {
-            /* If current bin has magnitude at this height, color the pixel */
-            if(binMagBuffer[bin] != 0)
-            {
-                /* Choose color based on bin number (cycles through colors) */
-                frame[row][col] = (bin % (NUM_COLORS - 1)) + 1; /* Cycle through colors 1-7 (assuming 8 colors) */
-            }
-            else
-            {
-                /* No magnitude at this height, set pixel to black */
-                frame[row][col] = BLACK;
-            }
-
-            /* Check if we've finished drawing this frequency bin and should move to next */
-            if((col % BIN_WIDTH_SCREEN) == (BIN_WIDTH_SCREEN - 1))
-            {
-                if(binMagBuffer[bin] != 0)
-                {
-                    /* Decrement bin height as we've drawn one row of this bin */
-                    binMagBuffer[bin]--;
-                }
-                /* Move to next frequency bin */
-                bin++;
-            }
-        }
-        /* Reset to first frequency bin for the next row */
-        bin = 0;
-    }
+    arm_rfft_fast_init_f32(&fftHandler, fftLen);
 }
 
 /**
@@ -95,13 +25,20 @@ void computeFFTScreen(float * inputSignal, uint16_t inputSize, color_t frame[ROW
  * This function performs FFT on the input signal and calculates
  * the magnitude and corresponding frequency for each FFT bin.
  */
-void computeFFT(float_t * inputSignal, uint16_t inputSize, float * fftMagBuffer, float * fftFreqBuffer)
+void computeFFT(float_t * inputSignal, uint16_t inputSize, uint16_t fftLength, float * fftMagBuffer, float * fftFreqBuffer, float * fftPhaseBuffer)
 {
-    float fftInputBuffer[FFT_LEN];   /* Buffer for FFT input */
-    float fftOutputBuffer[FFT_LEN];  /* Buffer for FFT output (complex values) */
+		if((fftLength > FFT_MAX_LEN) || ((fftLength & (fftLength - 1)) != 0))
+		{
+			DEBUG_PRINTF("ERROR (computeFFT): FFT Length must be a power of 2 and may not exceed a length of %d", FFT_MAX_LEN);
+			return;
+		}
+
+    float fftInputBuffer[FFT_MAX_LEN];   /* Buffer for FFT input */
+    float fftOutputBuffer[FFT_MAX_LEN];  /* Buffer for FFT output (complex values) */
+		initFFT(fftLength); // setup the FFT length
 
     /* Copy input signal to FFT input buffer with zero padding */
-    for(int index = 0; index < FFT_LEN; index++)
+    for(int index = 0; index < fftLength; index++)
     {
         if(index < inputSize)
         {
@@ -118,16 +55,69 @@ void computeFFT(float_t * inputSignal, uint16_t inputSize, float * fftMagBuffer,
     arm_rfft_fast_f32(&fftHandler, fftInputBuffer, fftOutputBuffer, 0);
 
     /* Process FFT results (only half of bins due to Nyquist limit) */
-    for(int index = 0; index < FFT_LEN / 2; index++)
+    for(int index = 0; index < fftLength / 2; index++)
     {
         /* Calculate magnitude using Pythagorean theorem (sqrt(real² + imag²)) */
         /* Real part is at even indices, imaginary part at odd indices */
         fftMagBuffer[index] = sqrt(
             (fftOutputBuffer[2*index] * fftOutputBuffer[2*index]) +
             (fftOutputBuffer[2*index + 1] * fftOutputBuffer[2*index + 1])
-        ) / (FFT_LEN * 1 / 2); /* Normalize magnitude */
+        ) / (fftLength / 2); /* Normalize magnitude */
 
         /* Calculate the actual frequency in Hz for this bin */
-        fftFreqBuffer[index] = (float)((index * AUDIO_SAMPLE_RATE)) / ((float)FFT_LEN);
+        fftFreqBuffer[index] = (float)((index * AUDIO_SAMPLE_RATE)) / ((float)fftLength);
+
+        /* Calculate the phase information of the singal in Radians */
+        fftPhaseBuffer[index] = (float) atan2(fftOutputBuffer[2*index + 1], fftOutputBuffer[2*index]);
     }
 }
+
+
+
+void computeIFFT(float_t * timeDomainSignal, uint16_t timeDomainSize, uint16_t fftLength, float * fftMagBuffer, float * fftPhaseBuffer)
+{
+	if((fftLength > FFT_MAX_LEN) || ((fftLength & (fftLength - 1)) != 0))
+	{
+			DEBUG_PRINTF("ERROR (computeIFFT): FFT Length must be a power of 2 and may not exceed a length of %d", FFT_MAX_LEN);
+			return;
+	}
+	// clear out the old time-domain signal
+//	for(int sample = 0; sample < timeDomainSize; sample++)
+//	{
+//		timeDomainSignal[sample] = 0;
+//	}
+	float fftComplexOutput[FFT_MAX_LEN]; // Buffer for complex FFT output before inverse transform
+	initFFT(fftLength);
+
+	// Convert back to complex form for Inverse FFT
+	for(int i = 0; i < FFT_MAX_LEN; i++)
+	{
+			if(i < fftLength / 2)
+			{
+				// Reconstruct complex FFT data using magnitude and phase
+				fftComplexOutput[2*i]   = audioFFTMagBuffer[i] * cos(audioFFTPhaseBuffer[i]);
+				fftComplexOutput[2*i+1] = audioFFTMagBuffer[i] * sin(audioFFTPhaseBuffer[i]);
+			}
+			else // taking a smaller pt IFFT than the maximum allows, so fill the rest of the array with zeros
+			{
+				fftComplexOutput[i] = 0;
+			}
+
+	}
+
+	// Apply inverse FFT to get back to time domain
+	arm_rfft_fast_f32(&fftHandler, fftComplexOutput, timeDomainSignal, 1); // 1 for inverse FFT
+
+	// Scale by FFT length (required after inverse FFT)
+	// Disabled because we already normalize the magnitude after performing the FFT in fft_driver.c
+	// for(int i = 0; i < SONG_BUFF_SIZE; i++)
+	// {
+	   // audioFloat[i] /= FFT_AUDIO_LEN;
+	// }
+}
+
+
+
+
+
+
