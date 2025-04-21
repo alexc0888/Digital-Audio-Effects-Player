@@ -153,7 +153,6 @@ int main(void)
   OLED_Reset();
   OLED_InitReg();
   OLED_1in5_rgb_Init();
-	render_track_list(0);
 
   // Check SD card details
   DEBUG_PRINTF("\n\rSD Card Information:\r\n");
@@ -176,8 +175,11 @@ int main(void)
   {
   	DEBUG_PRINTF("%s\r\n", songList[i]);
   }
+  setTrackList(songList, numSongs);
+	render_track_list(3);
 
-  if(sdLoadSong(songList[4]) != SD_SUCCESS)
+
+  if(sdLoadSong(songList[3]) != SD_SUCCESS)
   {
   	Error_Handler();
   }

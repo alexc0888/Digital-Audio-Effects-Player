@@ -9,14 +9,21 @@ typedef struct {
 
 track_t track_list_type[7];
 
-char* track_list[7] =
-	   {"fireworks",
-		"sicko mode",
-		"john cena",
-		"abcdefghijklmnopqrstu",
-		"track e",
-		"track f",
-		"track g"};
+char track_list[MAX_FILE_NUM][64 + 1]; // 64 + 1 corresponds to MAX_FILE_NAME_LEN constant in main.c
+
+void setTrackList(char fileList[MAX_FILE_NUM][64 + 1], uint8_t numFiles)
+{
+	// Clear the old track list
+	for(uint8_t file = 0; file < MAX_FILE_NUM; file++)
+	{
+		strcpy(track_list[file], " ");
+	}
+	// Assign the new track list from the SD Card read
+	for(uint8_t file = 0; file < numFiles; file++)
+	{
+		strcpy(track_list[file], fileList[file]);
+	}
+}
 
 void OLED_1in5_rgb_Init(void) {
 	//Hardware reset
