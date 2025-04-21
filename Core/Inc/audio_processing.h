@@ -20,6 +20,8 @@ extern float audioFFTMagBuffer[FFT_AUDIO_LEN / 2];   /* Magnitude of each freque
 extern float audioFFTFreqBuffer[FFT_AUDIO_LEN / 2];  /* Frequency value of each bin (Hz) */
 extern float audioFFTPhaseBuffer[FFT_AUDIO_LEN / 2]; /* Phase value of each bin (Rad) */
 extern uint8_t normalizeAudio;
+extern uint8_t FDbassBoostEnabled;
+extern uint8_t TDbassBoostEnabled;
 
 // defined constants
 
@@ -28,8 +30,9 @@ extern uint8_t normalizeAudio;
 // function declarations
 void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat);
 void applyAudioEffects(float* audioFloat, uint16_t inputSize);
-void bassBoost();
+void FDbassBoost();
 void initAudioProcess(void);
-
+void TDsetBassBoostParameters(float amount, float cutoff);
+void TDtoggleBassBoost(void);
 
 #endif
