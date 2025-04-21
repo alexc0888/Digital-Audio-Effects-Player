@@ -1,3 +1,10 @@
+/*
+ * audio_processing.h
+ *
+ *  Created on: Apr 12, 2025
+ *      Authors: derekxrosales (Derek Rosales)
+ *       				 alexc0888 (Alex Chitsazzadeh)
+ */
 #ifndef __AUDIO_PROCESSING__
 #define __AUDIO_PROCESSING__
 

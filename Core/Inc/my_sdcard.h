@@ -1,7 +1,14 @@
+/*
+ * my_sdcard.h
+ *
+ *  Created on: Apr 5, 2025
+ *      Authors: alexc0888  (Alex Chitsazzadeh)
+ *      				 itsadisood (Aditya Sood)
+ */
+
 #ifndef __MY_SDCARD__
 #define __MY_SDCARD__
 
-#include "stm32f4xx_hal.h"
 #include "shared_consts.h"
 #include <string.h>
 

@@ -34,11 +34,11 @@ extern "C" {
 #include "shared_consts.h"
 #include "matrix_driver.h"
 #include "fft_driver.h"
-#include "wave_table.h"
 #include "dac_output.h"
 #include "my_sdcard.h"
 #include "wav_parser.h"
 #include "audio_processing.h"
+#include "oled_driver.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -60,7 +60,12 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void OLED_Reset(void);
+void OLED_WriteReg(uint8_t Reg);
+void OLED_WriteData(uint8_t Reg);
+void OLED_StartWrite();
+void OLED_WriteSeq(uint8_t *data, int len);
+void OLED_EndWrite();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -70,16 +75,24 @@ void Error_Handler(void);
 #define MCO_GPIO_Port GPIOH
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
+#define OLED_DC_Pin GPIO_PIN_12
+#define OLED_DC_GPIO_Port GPIOF
 #define LD3_Pin GPIO_PIN_14
 #define LD3_GPIO_Port GPIOB
 #define STLK_RX_Pin GPIO_PIN_8
 #define STLK_RX_GPIO_Port GPIOD
 #define STLK_TX_Pin GPIO_PIN_9
 #define STLK_TX_GPIO_Port GPIOD
+#define OLED_CS_Pin GPIO_PIN_14
+#define OLED_CS_GPIO_Port GPIOD
+#define OLED_RST_Pin GPIO_PIN_15
+#define OLED_RST_GPIO_Port GPIOD
 #define USB_PowerSwitchOn_Pin GPIO_PIN_6
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
+#define SD_DET_Pin GPIO_PIN_6
+#define SD_DET_GPIO_Port GPIOC
 #define USB_SOF_Pin GPIO_PIN_8
 #define USB_SOF_GPIO_Port GPIOA
 #define USB_VBUS_Pin GPIO_PIN_9

@@ -1,7 +1,13 @@
+/*
+ * dac_output.h
+ *
+ *  Created on: Mar 31, 2025
+ *      Author: alexc0888 (Alex Chitsazzadeh)
+ */
+
 #ifndef __DAC_OUTPUT__
 #define __DAC_OUTPUT__
 
-#include "stm32f4xx_hal.h"
 #include "shared_consts.h"
 #include "circular_buffer.h"
 

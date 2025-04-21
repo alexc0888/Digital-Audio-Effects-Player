@@ -1,5 +1,4 @@
 #include "audio_processing.h"
-#include "fft_driver.h" // Add this to access fftHandler
 
 /* Buffers to store FFT results - these are filled via memcpy elsewhere */
 float audioFFTMagBuffer[FFT_AUDIO_LEN / 2]; /* Magnitude of each frequency bin */
@@ -11,9 +10,6 @@ float bassFreqCutoff = 250.0f; // Hz, adjust to taste
 float bassBoostFactor = 8.0f; // Increase amplitude by this factor, adjust to taste
 int cutoffBin; // Will initialize in init function
 uint8_t normalizeAudio = FALSE;
-
-// Add an external reference to fftHandler from fft_driver.c
-extern arm_rfft_fast_instance_f32 fftHandler;
 
 /**
  * @brief Initialize audio processing

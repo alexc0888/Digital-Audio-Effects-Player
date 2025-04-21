@@ -1,7 +1,16 @@
+/*
+ * shared_consts.h
+ *
+ *  Created on: Apr 12, 2025
+ *      Author: alexc0888 (Alex Chitsazzadeh)
+ */
+
 #ifndef __SHARED_CONSTS__
 #define __SHARED_CONSTS__
 
 #include <stdio.h>
+#include "stm32f4xx_hal.h"
+
 
 #define MAX_VAL_UINT16_T 0xffff
 #define MAX_VAL_INT16_T  0x7fff

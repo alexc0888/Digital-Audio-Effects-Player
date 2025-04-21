@@ -1,3 +1,10 @@
+/*
+ * circular_buffer.h
+ *
+ *  Created on: Apr 14, 2025
+ *      Author: alexc0888 (Alex Chitsazzadeh)
+ */
+
 #ifndef __CIRCULAR_BUFFER__
 #define __CIRCULAR_BUFFER__
 

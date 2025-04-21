@@ -1,7 +1,15 @@
+/*
+ * matrix_driver.h
+ *
+ *  Created on: Mar 20, 2025
+ *      Authors: alexc0888     (Alex Chitsazzadeh)
+ *      				 derekxrosales (Derek Rosales)
+ *      				 itsadisood    (Aditya Sood)
+ */
+
 #ifndef __MATRIX_DRIVER__
 #define __MATRIX_DRIVER__
 
-#include "stm32f4xx_hal.h"
 #include "fft_driver.h"
 #include "shared_consts.h"
 

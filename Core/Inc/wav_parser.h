@@ -1,3 +1,10 @@
+/*
+ * wav_parser.h
+ *
+ *  Created on: Apr 5, 2025
+ *      Author: alexc0888 (Alex Chitsazzadeh)
+ */
+
 #ifndef __WAV_PARSER__
 #define __WAV_PARSER__
 

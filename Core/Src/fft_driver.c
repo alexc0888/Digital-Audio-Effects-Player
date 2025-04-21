@@ -1,5 +1,5 @@
 #include "fft_driver.h"
-#include "audio_processing.h"
+
 /* Global FFT handler from ARM CMSIS DSP library */
 arm_rfft_fast_instance_f32 fftHandler;
 
@@ -95,8 +95,8 @@ void computeIFFT(float_t * timeDomainSignal, uint16_t timeDomainSize, uint16_t f
 			if(i < fftLength / 2)
 			{
 				// Reconstruct complex FFT data using magnitude and phase
-				fftComplexOutput[2*i]   = audioFFTMagBuffer[i] * cos(audioFFTPhaseBuffer[i]);
-				fftComplexOutput[2*i+1] = audioFFTMagBuffer[i] * sin(audioFFTPhaseBuffer[i]);
+				fftComplexOutput[2*i]   = fftMagBuffer[i] * cos(fftPhaseBuffer[i]);
+				fftComplexOutput[2*i+1] = fftMagBuffer[i] * sin(fftPhaseBuffer[i]);
 			}
 			else // taking a smaller pt IFFT than the maximum allows, so fill the rest of the array with zeros
 			{

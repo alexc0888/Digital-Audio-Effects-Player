@@ -1,6 +1,5 @@
 
 #include "matrix_driver.h"
-#include <string.h>
 
 // structure to contain frame data ready to be directly DMA'ed to matrix pins
 hub75_gpio_t screen [SCREEN_ROW][SCREEN_COL];
