@@ -179,7 +179,7 @@ int main(void)
 	render_track_list(3);
 
 
-  if(sdLoadSong(songList[3]) != SD_SUCCESS)
+  if(sdLoadSong(songList[4]) != SD_SUCCESS)
   {
   	Error_Handler();
   }
@@ -209,7 +209,7 @@ int main(void)
     convS16Float(songBuffer, songBufferFlt, TRUE);
 
     // Perform audio processing algorithms on songBufferFlt...
-// THIS IS BROKEN   applyAudioEffects(songBufferFlt, SONG_BUFF_SIZE);
+    applyAudioEffects(songBufferFlt, SONG_BUFF_SIZE);
 
     /* Note that the FFT drawing on the screen will be ever so slightly
      * ahead of the audio playback from the DAC. The reason for this is

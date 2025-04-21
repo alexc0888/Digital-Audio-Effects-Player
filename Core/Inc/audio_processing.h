@@ -31,6 +31,7 @@ extern uint8_t TDbassBoostEnabled;
 void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat);
 void applyAudioEffects(float* audioFloat, uint16_t inputSize);
 void FDbassBoost();
+void TDbassBoost();
 void initAudioProcess(void);
 void TDsetBassBoostParameters(float amount, float cutoff);
 void TDtoggleBassBoost(void);

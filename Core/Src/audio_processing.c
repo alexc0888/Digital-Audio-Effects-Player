@@ -15,9 +15,9 @@ uint8_t FDbassBoostEnabled = FALSE;
 float TDfilterState = 0.0f;  // For low-pass filter
 uint8_t TDbassBoostEnabled = TRUE;
 float TDbassBoostFactor = 3.0f;  // Amplification factor for bass frequencies
-float TDfilterCoeff = 0.05f;     // Lower value = lower cutoff frequency (more bass)
+float TDfilterCoeff = 0.1f;     // Lower value = lower cutoff frequency (more bass)
 
-uint8_t normalizeAudio = FALSE;
+uint8_t normalizeAudio = TRUE;
 
 
 /**
@@ -62,7 +62,7 @@ void applyAudioEffects(float* audioFloat, uint16_t inputSize)
 	if (TDbassBoostEnabled)
 	{
 
-		TDBassBoost(audioFloat);
+		TDbassBoost(audioFloat);
 		// Normalize if needed to prevent clipping
 	    if(normalizeAudio)
 	    {
@@ -161,7 +161,7 @@ void TDbassBoost(float* audioFloat)
 
 /**
  * @brief Set bass boost parameters - to be used later when user input is dynamic (maybe)
- * @param amount Boost amount (1.0 = no boost, >1.0 = boost)
+ * @param amount Boost amount (0.0 = no boost, >1.0 = boost)
  * @param cutoff Cutoff coefficient (0.01-0.1, lower = deeper bass)
  */
 void TDsetBassBoostParameters(float amount, float cutoff)
