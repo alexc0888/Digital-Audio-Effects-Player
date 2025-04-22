@@ -52,15 +52,8 @@ UART_HandleTypeDef huart3;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-color_t fftFrame [ROW][COL];
 char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
 int numSongs;
-wav_header_t songInfo;
-
-int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
-float   songBufferFlt[SONG_BUFF_SIZE];
-int songPlaying = FALSE;
-int status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,74 +105,48 @@ void OLED_WriteSeq(uint8_t *data, int len) {
 void OLED_EndWrite() {
 	HAL_GPIO_WritePin(OLED_CS_GPIO_Port, OLED_CS_Pin, GPIO_PIN_SET);
 }
-/* USER CODE END 0 */
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
+int trackSelectionState()
 {
-
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_USART3_UART_Init();
-  MX_USB_OTG_FS_PCD_Init();
-  MX_SDIO_SD_Init();
-  MX_FATFS_Init();
-  MX_SPI1_Init();
-  /* USER CODE BEGIN 2 */
+	// Reset the OLED
   OLED_Reset();
   OLED_InitReg();
   OLED_1in5_rgb_Init();
 
-  // Check SD card details
-  DEBUG_PRINTF("\n\rSD Card Information:\r\n");
-  DEBUG_PRINTF("Block size         : %lu\r\n", hsd.SdCard.BlockSize);
-  DEBUG_PRINTF("Block number       : %lu\r\n", hsd.SdCard.BlockNbr);
+	int cursor = 0;
+	char input = 'X';
+	do
+	{
+		input = getButton();
+		cursor += (input == 'D') ? 1  :
+							(input == 'U') ? -1 : 0;
 
-  // Try mounting the card...
-  if(sdMount() != SD_SUCCESS)
-  {
-    Error_Handler();
-  }
+		if(cursor < 0)
+		{
+			cursor = 6;
+		}
+		if(cursor > 6)
+		{
+			cursor = 0;
+		}
+		render_track_list(cursor);
+	} while(input != 'R');
 
-  // grab a list of all the songs currently on-file in the SD card
-  if(sdGetFileList(songList, SONG_DIR, &numSongs) != SD_SUCCESS)
-  {
-  	Error_Handler();
-  }
-  DEBUG_PRINTF("Printing all the found songs: \r\n");
-  for(int i = 0; i < numSongs; i++)
-  {
-  	DEBUG_PRINTF("%s\r\n", songList[i]);
-  }
-  setTrackList(songList, numSongs);
-	render_track_list(3);
+	return cursor;
+}
 
+void playTrack(int songSelection)
+{
+  // Initialize important variables for playing song
+  int songPlaying = TRUE;
+  wav_header_t songInfo;
+  int sd_status;
+  int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
+  float   songBufferFlt[SONG_BUFF_SIZE];
+  color_t fftFrame [ROW][COL];
 
-  if(sdLoadSong(songList[4]) != SD_SUCCESS)
+	// Load up the song and parse the header of the .WAV file
+  if(sdLoadSong(songList[songSelection]) != SD_SUCCESS)
   {
   	Error_Handler();
   }
@@ -188,19 +155,19 @@ int main(void)
   	Error_Handler();
   }
 
-  songPlaying = TRUE;
+  // Initiate hardware for playing music
 	initMatrix();
 	initFrameBuffers();
 	initDAC();
 	initAudioProcess();
   while(songPlaying)
   {
-  	status = sdReadSong(songBuffer);
-    if(status == SD_FAIL)
+  	sd_status = sdReadSong(songBuffer);
+    if(sd_status == SD_FAIL)
     {
     	Error_Handler();
     }
-    else if(status == SD_EOF) // fetched last bit of the song, it will end after this iteration
+    else if(sd_status == SD_EOF) // fetched last bit of the song, it will end after this iteration
     {
     	songPlaying = FALSE;
     }
@@ -244,6 +211,74 @@ int main(void)
     // Producer - push the latest set of samples onto the DACBufferQ
     fillDacBuffer(songBufferFlt);
   }
+}
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_USART3_UART_Init();
+  MX_USB_OTG_FS_PCD_Init();
+  MX_SDIO_SD_Init();
+  MX_FATFS_Init();
+  MX_SPI1_Init();
+  /* USER CODE BEGIN 2 */
+
+  // Check SD card details
+  DEBUG_PRINTF("\n\rSD Card Information:\r\n");
+  DEBUG_PRINTF("Block size         : %lu\r\n", hsd.SdCard.BlockSize);
+  DEBUG_PRINTF("Block number       : %lu\r\n", hsd.SdCard.BlockNbr);
+
+  // Try mounting the card...
+  if(sdMount() != SD_SUCCESS)
+  {
+    Error_Handler();
+  }
+
+  // grab a list of all the songs currently on-file in the SD card
+  if(sdGetFileList(songList, SONG_DIR, &numSongs) != SD_SUCCESS)
+  {
+  	Error_Handler();
+  }
+  DEBUG_PRINTF("Printing all the found songs: \r\n");
+  for(int i = 0; i < numSongs; i++)
+  {
+  	DEBUG_PRINTF("%s\r\n", songList[i]);
+  }
+  setTrackList(songList, numSongs);
+
+  int selection = trackSelectionState();
+  playTrack(selection);
+
+
+
 
 
   // exit
@@ -555,6 +590,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SD_DET_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB_RIGHT_Pin PB_LEFT_Pin PB_UP_Pin PB_DOWN_Pin */
+  GPIO_InitStruct.Pin = PB_RIGHT_Pin|PB_LEFT_Pin|PB_UP_Pin|PB_DOWN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

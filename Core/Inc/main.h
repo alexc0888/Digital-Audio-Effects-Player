@@ -39,6 +39,7 @@ extern "C" {
 #include "wav_parser.h"
 #include "audio_processing.h"
 #include "oled_driver.h"
+#include "user_inputs.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -66,6 +67,9 @@ void OLED_WriteData(uint8_t Reg);
 void OLED_StartWrite();
 void OLED_WriteSeq(uint8_t *data, int len);
 void OLED_EndWrite();
+
+int trackSelectionState();
+void playTrack(int);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -107,6 +111,18 @@ void OLED_EndWrite();
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define PB_RIGHT_Pin GPIO_PIN_4
+#define PB_RIGHT_GPIO_Port GPIOD
+#define PB_RIGHT_EXTI_IRQn EXTI4_IRQn
+#define PB_LEFT_Pin GPIO_PIN_5
+#define PB_LEFT_GPIO_Port GPIOD
+#define PB_LEFT_EXTI_IRQn EXTI9_5_IRQn
+#define PB_UP_Pin GPIO_PIN_6
+#define PB_UP_GPIO_Port GPIOD
+#define PB_UP_EXTI_IRQn EXTI9_5_IRQn
+#define PB_DOWN_Pin GPIO_PIN_7
+#define PB_DOWN_GPIO_Port GPIOD
+#define PB_DOWN_EXTI_IRQn EXTI9_5_IRQn
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
