@@ -15,9 +15,9 @@
 
 // defined constants
 
-
 // function declarations
 char getButton();
+void getKnobs(ADC_HandleTypeDef *, knobs_t *);
 void setup_TIM7(uint16_t, uint16_t);
 
 

@@ -13,7 +13,7 @@ uint8_t FDbassBoostEnabled = FALSE;
 
 // Filter state variables for time domain approach
 float TDfilterState = 0.0f;  // For low-pass filter - save the previous value
-uint8_t TDbassBoostEnabled = FALSE;
+uint8_t TDbassBoostEnabled = TRUE;
 float TDbassBoostFactor = 3.0f;  // Amplification factor for bass frequencies
 float TDfilterCoeff = 0.1f;     // Lower value = lower cutoff frequency (more bass)
 
@@ -34,15 +34,23 @@ uint8_t normalizeAudio = TRUE;
  * @brief Initialize audio processing
  * Initialize variables that can't be statically initialized
  */
-void initAudioProcess(void)
+void initAudioProcess(knobs_t *audioParams)
 {
     if (FDbassBoostEnabled)
-		cutoffBin = (int)(FDbassFreqCutoff * FFT_AUDIO_LEN / AUDIO_SAMPLE_RATE);
+    {
+  		cutoffBin = (int)(FDbassFreqCutoff * FFT_AUDIO_LEN / AUDIO_SAMPLE_RATE);
+    }
     // Reset filter state
     else if (TDbassBoostEnabled)
-		TDfilterState = 0.0f;
+    {
+  		TDfilterState = 0.0f;
+  		TDbassBoostFactor = audioParams -> bassGain * BASS_BOOST_FACTOR_MAX;
+  		TDfilterCoeff     = audioParams -> bassCutoff * BASS_BOOST_CUTOFF_MAX;
+    }
     else if (tremoloFilterEnabled)
-    triMax =  (AUDIO_SAMPLE_RATE / triFreq) * 0.25f;
+    {
+      triMax =  (AUDIO_SAMPLE_RATE / triFreq) * 0.25f;
+    }
 }
 
 // Map the PCM_s16 samples into floating point numbers, on a scale of 0 to 3.3V
@@ -69,9 +77,11 @@ void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat)
  * This will be performed via an FFT. Before returning to main, an IFFT is performed
  * to get the processed time-domain signal back.
  */
-void applyAudioEffects(float* audioFloat, uint16_t inputSize)
+void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t * audioParams)
 {
-	setVolume(audioFloat, 2.3f);
+	initAudioProcess(audioParams);
+
+	setVolume(audioFloat, 5.3f);
 	if(tremoloFilterEnabled)
 	{
 		tremoloFilter(audioFloat);

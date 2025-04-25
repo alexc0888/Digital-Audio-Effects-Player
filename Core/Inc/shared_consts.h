@@ -11,6 +11,11 @@
 #include <stdio.h>
 #include "stm32f4xx_hal.h"
 
+typedef struct
+{
+	float bassGain;
+	float bassCutoff;
+} knobs_t;
 
 #define MAX_VAL_UINT16_T 0xffff
 #define MAX_VAL_INT16_T  0x7fff

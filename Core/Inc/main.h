@@ -78,8 +78,6 @@ uint32_t endState();
 #define USER_Btn_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
-#define LD1_Pin GPIO_PIN_0
-#define LD1_GPIO_Port GPIOB
 #define OLED_DC_Pin GPIO_PIN_12
 #define OLED_DC_GPIO_Port GPIOF
 #define LD3_Pin GPIO_PIN_14
