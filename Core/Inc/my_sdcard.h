@@ -25,14 +25,14 @@
 // Wrapper functions for fatFS
 int sdMount();
 int sdOpenFile(char *);
-int sdReadFile(void *, uint32_t);
+int sdReadFile(void *, uint32_t, unsigned int *);
 int sdCloseFile();
 int sdUnmount();
 
 // Custom functions for
 int sdGetFileList(char [MAX_FILE_NUM][64 + 1], char *, int *);
 int sdLoadSong(char *);
-int sdReadSong(int16_t [SONG_BUFF_SIZE]);
+int sdReadSong(int16_t [SONG_BUFF_SIZE], unsigned int *);
 
 
 #endif

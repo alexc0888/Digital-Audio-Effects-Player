@@ -12,10 +12,20 @@ int cutoffBin; // Will initialize in init function
 uint8_t FDbassBoostEnabled = FALSE;
 
 // Filter state variables for time domain approach
-float TDfilterState = 0.0f;  // For low-pass filter
-uint8_t TDbassBoostEnabled = TRUE;
+float TDfilterState = 0.0f;  // For low-pass filter - save the previous value
+uint8_t TDbassBoostEnabled = FALSE;
 float TDbassBoostFactor = 3.0f;  // Amplification factor for bass frequencies
 float TDfilterCoeff = 0.1f;     // Lower value = lower cutoff frequency (more bass)
+
+
+// Filter state variables for tremolo effect
+uint8_t tremoloFilterEnabled = FALSE;
+float triangleWave = 0.0f;
+float triDir       = 1.0f;
+float triFreq      = 10;
+float triMax       = 0;
+float tremoloDepth = 0.5f;
+
 
 uint8_t normalizeAudio = TRUE;
 
@@ -31,6 +41,8 @@ void initAudioProcess(void)
     // Reset filter state
     else if (TDbassBoostEnabled)
 		TDfilterState = 0.0f;
+    else if (tremoloFilterEnabled)
+    triMax =  (AUDIO_SAMPLE_RATE / triFreq) * 0.25f;
 }
 
 // Map the PCM_s16 samples into floating point numbers, on a scale of 0 to 3.3V
@@ -59,9 +71,13 @@ void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat)
  */
 void applyAudioEffects(float* audioFloat, uint16_t inputSize)
 {
+	setVolume(audioFloat, 2.3f);
+	if(tremoloFilterEnabled)
+	{
+		tremoloFilter(audioFloat);
+	}
 	if (TDbassBoostEnabled)
 	{
-
 		TDbassBoost(audioFloat);
 		// Normalize if needed to prevent clipping
 	    if(normalizeAudio)
@@ -177,4 +193,41 @@ void TDtoggleBassBoost(void)
 {
     TDbassBoostEnabled = !TDbassBoostEnabled;
 }
+
+/**
+ * @brief Adjust the overall volume of the outgoing sample
+ * @param audioFloat - Audio Buffer
+ * @param gain - [0, 1) reduces the volume, (1, inf) increases the volume, [1, 1] maintains it
+ */
+void setVolume(float* audioFloat, float gain)
+{
+	// don't waste time if applying unity gain
+	if(gain != 1.0f) // 1.0f is exactly representable in IEEE float, so this is okay to do
+	{
+		for(int sample = 0; sample < SONG_BUFF_SIZE; sample++)
+		{
+			audioFloat[sample] *= gain;
+			// do not allow sample to exceed 95% of MAX_AMPLITUDE, else we will have overflow when converting back to int16_t in dac_output.c
+			if(audioFloat[sample] > 0.95f * MAX_AMPLITUDE)
+			{
+				audioFloat[sample] = 0.95 * MAX_AMPLITUDE;
+			}
+		}
+	}
+}
+
+void tremoloFilter(float* audioFloat)
+{
+	for(int sample = 0; sample < SONG_BUFF_SIZE; sample++)
+	{
+		audioFloat[sample] = audioFloat[sample] * ((1.0f - tremoloDepth) + (tremoloDepth * triangleWave / triMax)); // bound to [-1, 1]
+		triangleWave += triDir;
+
+		if(triangleWave >= triMax || triangleWave <= -1 * triMax)
+		{
+			triDir *= -1; // reached a peak of the wave period, so flip the sign to go the other way
+		}
+	}
+}
+
 

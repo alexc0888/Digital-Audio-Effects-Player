@@ -180,8 +180,9 @@ void clearWavHeader(wav_header_t *wavHeader)
 
 int readWavHeader(char *rdBuff, uint32_t numBytes)
 {
+	unsigned int bytesRead;
 	// grab 44 byte header from storage platform (SD card in this case)
-	if(sdReadFile((void *)rdBuff, numBytes) != SD_SUCCESS)
+	if(sdReadFile((void *)rdBuff, numBytes, &bytesRead) != SD_SUCCESS)
 	{
 		return PARSE_FAIL;
 	}

@@ -22,21 +22,20 @@ int sdOpenFile(char *filePath)
 	return SD_SUCCESS;
 }
 
-int sdReadFile(void *rdBuff, uint32_t bytesToRead)
+int sdReadFile(void *rdBuff, uint32_t bytesToRead, unsigned int *bytesRead)
 {
-	int bytesRead;
-	if(f_read(&SDFile, rdBuff, bytesToRead, (void*) &bytesRead) != FR_OK)
+	if(f_read(&SDFile, rdBuff, bytesToRead, bytesRead) != FR_OK)
 	{
 		DEBUG_PRINTF("Failed to read file. Double-check the file permissions.\r\n");
 		return SD_FAIL;
 	}
-	if(bytesRead < bytesToRead)
+	if(*bytesRead < bytesToRead)
 	{
 		DEBUG_PRINTF("NOTE: Reached end of file... ");
-		DEBUG_PRINTF("Read %d bytes.\r\n", bytesRead);
+		DEBUG_PRINTF("Read %d bytes.\r\n", *bytesRead);
 		return SD_EOF;
 	}
-	DEBUG_PRINTF("Read %d bytes.\r\n", bytesRead);
+	DEBUG_PRINTF("Read %d bytes.\r\n", *bytesRead);
 	return SD_SUCCESS;
 }
 
@@ -123,8 +122,8 @@ int sdLoadSong(char *songName)
 	return status;
 }
 
-int sdReadSong(int16_t songBuff[SONG_BUFF_SIZE])
+int sdReadSong(int16_t songBuff[SONG_BUFF_SIZE], unsigned int *bytesRead)
 {
-	return sdReadFile(songBuff, SONG_BUFF_SIZE * sizeof(int16_t));
+	return sdReadFile(songBuff, SONG_BUFF_SIZE * sizeof(int16_t), bytesRead);
 }
 

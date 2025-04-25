@@ -26,6 +26,8 @@ void draw_char(uint32_t *image, uint32_t startX, uint32_t startY, char c, uint32
 void draw_text(uint32_t *image, uint32_t startX, uint32_t startY, char *text, uint32_t color);
 void render_track_list(int current_selection);
 void render_track_playing(int current_selection, int current_duration, int total_duration);
+void render_track_progress(int current_selection, int current_duration, int total_duration);
 void OLED_InitReg(void);
+
 
 #endif /* __OLED_DRIVER__ */

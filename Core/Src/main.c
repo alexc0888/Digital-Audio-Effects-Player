@@ -144,6 +144,9 @@ void playTrack(int songSelection)
   int16_t songBuffer[SONG_BUFF_SIZE]; // .wav file encoded in pcm_s16le
   float   songBufferFlt[SONG_BUFF_SIZE];
   color_t fftFrame [ROW][COL];
+  unsigned int bytesRead;
+  int currentByte = 0;
+  uint32_t cycle = 0;
 
 	// Load up the song and parse the header of the .WAV file
   if(sdLoadSong(songList[songSelection]) != SD_SUCCESS)
@@ -160,9 +163,10 @@ void playTrack(int songSelection)
 	initFrameBuffers();
 	initDAC();
 	initAudioProcess();
+  render_track_playing(songSelection, 0, 999);
   while(songPlaying)
   {
-  	sd_status = sdReadSong(songBuffer);
+  	sd_status = sdReadSong(songBuffer, &bytesRead);
     if(sd_status == SD_FAIL)
     {
     	Error_Handler();
@@ -171,6 +175,11 @@ void playTrack(int songSelection)
     {
     	songPlaying = FALSE;
     }
+
+    // Render a new "track playing" frame onto the OLED
+    currentByte += bytesRead;
+    render_track_progress(songSelection, currentByte, songInfo.Subchunk2Size);
+
 
     // create a floating point buffer of the sample for data processing + FFT
     convS16Float(songBuffer, songBufferFlt, TRUE);

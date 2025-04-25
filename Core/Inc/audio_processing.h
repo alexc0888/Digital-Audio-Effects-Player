@@ -35,5 +35,7 @@ void TDbassBoost();
 void initAudioProcess(void);
 void TDsetBassBoostParameters(float amount, float cutoff);
 void TDtoggleBassBoost(void);
+void setVolume(float* audioFloat, float gain);
+void tremoloFilter(float* audioFloat);
 
 #endif
