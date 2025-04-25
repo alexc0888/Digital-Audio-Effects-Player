@@ -108,11 +108,6 @@ void OLED_EndWrite() {
 
 int trackSelectionState()
 {
-	// Reset the OLED
-  OLED_Reset();
-  OLED_InitReg();
-  OLED_1in5_rgb_Init();
-
 	int cursor = 0;
 	char input = 'X';
 	do
@@ -161,12 +156,6 @@ void playTrackState(int songSelection)
 	int totalDuration = songInfo.Subchunk2Size / AUDIO_SAMPLE_RATE;
 	int currTime      = 0;
 
-
-  // Initiate hardware for playing music
-	initMatrix();
-	initFrameBuffers();
-	initDAC();
-	initAudioProcess();
   render_track_playing(songSelection, 1, 999);
   while(songPlaying)
   {
@@ -321,22 +310,37 @@ int main(void)
   	DEBUG_PRINTF("%s\r\n", songList[i]);
   }
   setTrackList(songList, numSongs);
+	// Reset the OLED
+  OLED_Reset();
+  OLED_InitReg();
+  OLED_1in5_rgb_Init();
 
 
 	uint32_t deviceOn = TRUE;
   do
   {
+    // Initiate hardware for playing music
+  	initMatrix();
+  	initFrameBuffers();
+  	initDAC();
+  	initAudioProcess();
+
     int selection = trackSelectionState();
     playTrackState(selection);
+    initDAC(); // reset DAC to stop audio playback
     deviceOn = endState();
   } while(deviceOn);
 
 
 
 
-
-
-  // exit
+  // reset the hardware on exit
+	initMatrix();
+	initFrameBuffers();
+	initDAC();
+	initAudioProcess();
+	// Reset the OLED
+  OLED_Reset();
   if(sdUnmount() != SD_SUCCESS)
   {
   	Error_Handler();

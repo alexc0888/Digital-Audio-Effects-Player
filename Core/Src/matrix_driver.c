@@ -325,6 +325,7 @@ void setup_TIM8(uint16_t psc, uint16_t arr)
 {
 	// Turn on the clock for timer 8
 	RCC  -> APB2ENR |= RCC_APB2ENR_TIM8EN; // TIM8 clock
+	TIM8 -> CR1     &= ~TIM_CR1_CEN; // disable the timer
 	TIM8 -> CR1     &= ~TIM_CR1_DIR; // count up
 
 	TIM8 -> PSC   = psc - 1;

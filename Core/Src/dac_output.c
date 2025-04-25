@@ -73,6 +73,8 @@ void setup_TIM6(uint16_t psc, uint16_t arr)
 	// Turn on the clock for timer 6
 	RCC  -> APB1ENR |= RCC_APB1ENR_TIM6EN; // TIM6 clock
 
+
+	TIM6 -> CR1 &= ~TIM_CR1_CEN; // disable the timer
 	TIM6 -> PSC  = psc - 1;
 	TIM6 -> ARR  = arr - 1; // f_tim = fclk / (psc * arr) Hz
 	TIM6 -> CR2 |= TIM_CR2_MMS_1; // Setup TIM6 to enable TRGO on update event
