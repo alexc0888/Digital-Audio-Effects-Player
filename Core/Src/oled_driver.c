@@ -10,8 +10,6 @@ typedef struct {
 track_t track_list_type[7];
 
 char track_list[MAX_FILE_NUM][64 + 1]; // 64 + 1 corresponds to MAX_FILE_NAME_LEN constant in main.c
-uint32_t image_buffer_track_playing[128*128];
-
 
 void setTrackList(char fileList[MAX_FILE_NUM][64 + 1], uint8_t numFiles)
 {
@@ -177,11 +175,11 @@ void render_track_playing(int current_selection, int current_duration, int total
 	current_selection %= 7;
 	float seek_percent = (float) current_duration / (float) total_duration;
 
-//	uint32_t image_buffer[128*128];
+	uint32_t image_buffer[128*128];
 	for (int i = 0; i < 128*128; i++)
-		image_buffer_track_playing[i] = 0x00;
+		image_buffer[i] = 0x00;
 
-	draw_text(image_buffer_track_playing, 12, 4, "Playing track", 0xFFFFFFFF);
+	draw_text(image_buffer, 12, 4, "Playing track", 0xFFFFFFFF);
 
 
 	int max_row_len = 12;
@@ -194,23 +192,23 @@ void render_track_playing(int current_selection, int current_duration, int total
 		track_name_out[count++] = c;
 		if (count == max_row_len) {
 			track_name_out[max_row_len] = '\0';
-			draw_text(image_buffer_track_playing, (128 - (count * 8))/2, start_row + row_count * 10, track_name_out, 0xFFFFFFFF);
+			draw_text(image_buffer, (128 - (count * 8))/2, start_row + row_count * 10, track_name_out, 0xFFFFFFFF);
 			count = 0;
 			row_count++;
 		}
 	}
 	track_name_out[count] = '\0';
-	draw_text(image_buffer_track_playing, (128 - (count * 8))/2, start_row + row_count * 10, track_name_out, 0xFFFFFFFF);
+	draw_text(image_buffer, (128 - (count * 8))/2, start_row + row_count * 10, track_name_out, 0xFFFFFFFF);
 
 	int seek_start_pos = 20;
 	int seek_row = 100;
 	int seek_end_pos = 128 - seek_start_pos;
 	int seek_pos = seek_start_pos + (128 - 2 * seek_start_pos) * seek_percent;
 	for (int i = seek_start_pos; i < seek_pos; i++) {
-		image_buffer_track_playing[i + seek_row * 128] = 0x00FF0000;
+		image_buffer[i + seek_row * 128] = 0x00FF0000;
 	}
 	for (int i = seek_pos; i < seek_end_pos; i++) {
-		image_buffer_track_playing[i + seek_row * 128] = 0xFFFFFFFF;
+		image_buffer[i + seek_row * 128] = 0xFFFFFFFF;
 	}
 
 	char start_time[20];
@@ -218,37 +216,9 @@ void render_track_playing(int current_selection, int current_duration, int total
 
 	sprintf(start_time, "%d:%02d", current_duration/60, current_duration%60);
 	sprintf(end_time, "%d:%02d", total_duration/60, total_duration%60);
-	draw_text(image_buffer_track_playing, seek_start_pos - 8, seek_row - 10, start_time, 0xFFFFFFFF);
-	draw_text(image_buffer_track_playing, seek_end_pos - 24, seek_row - 10, end_time, 0xFFFFFFFF);
-	OLED_1in5_rgb_Display(image_buffer_track_playing);
-}
-
-void render_track_progress(int current_selection, int current_duration, int total_duration)
-{
-		current_selection %= 7;
-		float seek_percent = (float) current_duration / (float) total_duration;
-
-//		uint32_t image_buffer[128*128];
-
-		int seek_start_pos = 20;
-		int seek_row = 100;
-		int seek_end_pos = 128 - seek_start_pos;
-		int seek_pos = seek_start_pos + (128 - 2 * seek_start_pos) * seek_percent;
-		for (int i = seek_start_pos; i < seek_pos; i++) {
-			image_buffer_track_playing[i + seek_row * 128] = 0x00FF0000;
-		}
-		for (int i = seek_pos; i < seek_end_pos; i++) {
-			image_buffer_track_playing[i + seek_row * 128] = 0xFFFFFFFF;
-		}
-
-		char start_time[20];
-		char end_time[20];
-
-		sprintf(start_time, "%d:%02d", current_duration/60, current_duration%60);
-		sprintf(end_time, "%d:%02d", total_duration/60, total_duration%60);
-		draw_text(image_buffer_track_playing, seek_start_pos - 8, seek_row - 10, start_time, 0xFFFFFFFF);
-		draw_text(image_buffer_track_playing, seek_end_pos - 24, seek_row - 10, end_time, 0xFFFFFFFF);
-		OLED_1in5_rgb_Display(image_buffer_track_playing);
+	draw_text(image_buffer, seek_start_pos - 8, seek_row - 10, start_time, 0xFFFFFFFF);
+	draw_text(image_buffer, seek_end_pos - 24, seek_row - 10, end_time, 0xFFFFFFFF);
+	OLED_1in5_rgb_Display(image_buffer);
 }
 
 void OLED_InitReg(void) {

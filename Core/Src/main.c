@@ -163,7 +163,7 @@ void playTrack(int songSelection)
 	initFrameBuffers();
 	initDAC();
 	initAudioProcess();
-  render_track_playing(songSelection, 0, 999);
+  render_track_playing(songSelection, 1, 999);
   while(songPlaying)
   {
   	sd_status = sdReadSong(songBuffer, &bytesRead);
@@ -178,7 +178,6 @@ void playTrack(int songSelection)
 
     // Render a new "track playing" frame onto the OLED
     currentByte += bytesRead;
-    render_track_progress(songSelection, currentByte, songInfo.Subchunk2Size);
 
 
     // create a floating point buffer of the sample for data processing + FFT
