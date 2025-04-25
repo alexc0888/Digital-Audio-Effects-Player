@@ -69,7 +69,8 @@ void OLED_WriteSeq(uint8_t *data, int len);
 void OLED_EndWrite();
 
 int trackSelectionState();
-void playTrack(int);
+void playTrackState(int);
+uint32_t endState();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

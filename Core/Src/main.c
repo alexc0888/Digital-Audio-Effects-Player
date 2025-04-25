@@ -135,7 +135,7 @@ int trackSelectionState()
 	return cursor;
 }
 
-void playTrack(int songSelection)
+void playTrackState(int songSelection)
 {
   // Initialize important variables for playing song
   int songPlaying = TRUE;
@@ -147,6 +147,7 @@ void playTrack(int songSelection)
   unsigned int bytesRead;
   int currentByte = 0;
   uint32_t cycle = 0;
+	char input = 'X';
 
 	// Load up the song and parse the header of the .WAV file
   if(sdLoadSong(songList[songSelection]) != SD_SUCCESS)
@@ -157,6 +158,9 @@ void playTrack(int songSelection)
   {
   	Error_Handler();
   }
+	int totalDuration = songInfo.Subchunk2Size / AUDIO_SAMPLE_RATE;
+	int currTime      = 0;
+
 
   // Initiate hardware for playing music
 	initMatrix();
@@ -177,7 +181,25 @@ void playTrack(int songSelection)
     }
 
     // Render a new "track playing" frame onto the OLED
+    // The SPI transactions to the OLED is not done via DMA, so drawing the screen is awfully slow
+    // We will only refresh the screen at very infrequent intervals so that audio lag can be mostly avoided
     currentByte += bytesRead;
+    if(cycle == 0)
+    {
+    	currTime = ((double) currentByte / (double) songInfo.Subchunk2Size) * (double) totalDuration;
+      render_track_playing(songSelection, currTime, totalDuration);
+    }
+    cycle++;
+    if(cycle == 1000)
+    {
+    	cycle = 0;
+    }
+
+    input = getButton();
+    if(input == 'L')
+    {
+    	songPlaying = FALSE;
+    }
 
 
     // create a floating point buffer of the sample for data processing + FFT
@@ -219,6 +241,24 @@ void playTrack(int songSelection)
     // Producer - push the latest set of samples onto the DACBufferQ
     fillDacBuffer(songBufferFlt);
   }
+  sdCloseFile();
+
+}
+
+uint32_t endState()
+{
+	int cursor = 0;
+	char input = 'X';
+	do
+	{
+		input = getButton();
+		if(input == 'D' || input == 'U')
+		{
+			cursor ^= 0x1;
+		}
+		render_end_screen(cursor);
+	} while(input != 'R');
+	return !cursor;
 }
 /* USER CODE END 0 */
 
@@ -282,8 +322,15 @@ int main(void)
   }
   setTrackList(songList, numSongs);
 
-  int selection = trackSelectionState();
-  playTrack(selection);
+
+	uint32_t deviceOn = TRUE;
+  do
+  {
+    int selection = trackSelectionState();
+    playTrackState(selection);
+    deviceOn = endState();
+  } while(deviceOn);
+
 
 
 
