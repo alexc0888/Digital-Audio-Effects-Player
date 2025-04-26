@@ -42,6 +42,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 SD_HandleTypeDef hsd;
 DMA_HandleTypeDef hdma_sdio_rx;
@@ -56,6 +57,10 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 /* USER CODE BEGIN PV */
 char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
 int numSongs;
+volatile int adcDone = TRUE;
+volatile uint16_t adcSamples[5];
+volatile knobs_t controlKnobs;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,6 +78,16 @@ static void MX_ADC1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+	adcDone = TRUE;
+	// standardize the potentiometer readings as a percentage
+	controlKnobs.bassGain     = (float) adcSamples[0] / 4096.0f;
+	controlKnobs.bassCutoff   = (float) adcSamples[1] / 4096.0f;
+	controlKnobs.tremoloDepth = (float) adcSamples[2] / 4096.0f;
+	controlKnobs.trebleGain   = (float) adcSamples[3] / 4096.0f;
+	controlKnobs.trebleCutoff = (float) adcSamples[4] / 4096.0f;
+}
 void OLED_Reset(void) {
 	HAL_GPIO_WritePin(OLED_RST_GPIO_Port, OLED_RST_Pin, GPIO_PIN_SET);
 	HAL_Delay(100);
@@ -146,7 +161,7 @@ void playTrackState(int songSelection)
   int currentByte = 0;
   uint32_t cycle = 0;
 	char input = 'X';
-	knobs_t audioParams;
+	adcDone = TRUE;
 
 	// Load up the song and parse the header of the .WAV file
   if(sdLoadSong(songList[songSelection]) != SD_SUCCESS)
@@ -163,6 +178,12 @@ void playTrackState(int songSelection)
   render_track_playing(songSelection, 1, 999);
   while(songPlaying)
   {
+  	if(adcDone == TRUE)
+  	{
+  		// start up another ADC transaction to get the next audioParams inside controlKnobs
+  		adcDone = FALSE;
+  		HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adcSamples, 5);
+  	}
   	sd_status = sdReadSong(songBuffer, &bytesRead);
     if(sd_status == SD_FAIL)
     {
@@ -193,14 +214,13 @@ void playTrackState(int songSelection)
     {
     	songPlaying = FALSE;
     }
-    getKnobs(&hadc1, &audioParams);
 
 
     // create a floating point buffer of the sample for data processing + FFT
     convS16Float(songBuffer, songBufferFlt, TRUE);
 
     // Perform audio processing algorithms on songBufferFlt...
-    applyAudioEffects(songBufferFlt, SONG_BUFF_SIZE, &audioParams);
+    applyAudioEffects(songBufferFlt, SONG_BUFF_SIZE, controlKnobs);
 
     /* Note that the FFT drawing on the screen will be ever so slightly
      * ahead of the audio playback from the DAC. The reason for this is
@@ -440,7 +460,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 5;
   hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -452,7 +472,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -462,6 +482,33 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_9;
   sConfig.Rank = 2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = 3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Rank = 4;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_13;
+  sConfig.Rank = 5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -626,6 +673,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
   /* DMA2_Stream3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);

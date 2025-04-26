@@ -37,22 +37,6 @@ char getButton()
 	return temp;
 }
 
-// get new inputs from control knobs
-void getKnobs(ADC_HandleTypeDef * adc, knobs_t * controlKnobs)
-{
-	// Not any real reason to not use polling here since its a rather short task compared to other work CPU needs to do per iteration
-	HAL_ADC_Start(adc);
-	HAL_ADC_PollForConversion(adc, 10);
-	controlKnobs -> bassGain = HAL_ADC_GetValue(adc);
-	HAL_ADC_PollForConversion(adc, 10);
-	controlKnobs -> bassCutoff = HAL_ADC_GetValue(adc);
-	HAL_ADC_Stop(adc);
-
-	// normalize all inputs down to a scale of 1
-	controlKnobs -> bassGain /= 4096;
-	controlKnobs -> bassCutoff /= 4096;
-}
-
 
 void setup_TIM7(uint16_t psc, uint16_t arr)
 {

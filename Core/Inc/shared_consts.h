@@ -15,6 +15,11 @@ typedef struct
 {
 	float bassGain;
 	float bassCutoff;
+
+	float tremoloDepth;
+
+	float trebleGain;
+	float trebleCutoff;
 } knobs_t;
 
 #define MAX_VAL_UINT16_T 0xffff

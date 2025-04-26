@@ -24,16 +24,17 @@ extern uint8_t FDbassBoostEnabled;
 extern uint8_t TDbassBoostEnabled;
 
 // defined constants
-#define BASS_BOOST_FACTOR_MAX 10
+#define BASS_BOOST_FACTOR_MAX 10.0f
 #define BASS_BOOST_CUTOFF_MAX 0.1f
+#define TREMOLO_DEPTH_MAX     1.0f
 
 
 // function declarations
 void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat);
-void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t * audioParams);
+void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t audioParams);
 void FDbassBoost();
 void TDbassBoost();
-void initAudioProcess(knobs_t * audioParams);
+void initAudioProcess(knobs_t audioParams);
 void TDsetBassBoostParameters(float amount, float cutoff);
 void TDtoggleBassBoost(void);
 void setVolume(float* audioFloat, float gain);

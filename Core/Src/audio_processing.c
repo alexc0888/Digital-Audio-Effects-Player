@@ -19,7 +19,7 @@ float TDfilterCoeff = 0.1f;     // Lower value = lower cutoff frequency (more ba
 
 
 // Filter state variables for tremolo effect
-uint8_t tremoloFilterEnabled = FALSE;
+uint8_t tremoloFilterEnabled = TRUE;
 float triangleWave = 0.0f;
 float triDir       = 1.0f;
 float triFreq      = 10;
@@ -34,7 +34,7 @@ uint8_t normalizeAudio = TRUE;
  * @brief Initialize audio processing
  * Initialize variables that can't be statically initialized
  */
-void initAudioProcess(knobs_t *audioParams)
+void initAudioProcess(knobs_t audioParams)
 {
     if (FDbassBoostEnabled)
     {
@@ -44,12 +44,13 @@ void initAudioProcess(knobs_t *audioParams)
     else if (TDbassBoostEnabled)
     {
   		TDfilterState = 0.0f;
-  		TDbassBoostFactor = audioParams -> bassGain * BASS_BOOST_FACTOR_MAX;
-  		TDfilterCoeff     = audioParams -> bassCutoff * BASS_BOOST_CUTOFF_MAX;
+  		TDbassBoostFactor = audioParams.bassGain * BASS_BOOST_FACTOR_MAX;
+  		TDfilterCoeff     = audioParams.bassCutoff * BASS_BOOST_CUTOFF_MAX;
     }
-    else if (tremoloFilterEnabled)
+    if (tremoloFilterEnabled)
     {
       triMax =  (AUDIO_SAMPLE_RATE / triFreq) * 0.25f;
+      tremoloDepth = audioParams.tremoloDepth * TREMOLO_DEPTH_MAX;
     }
 }
 
@@ -77,11 +78,11 @@ void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat)
  * This will be performed via an FFT. Before returning to main, an IFFT is performed
  * to get the processed time-domain signal back.
  */
-void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t * audioParams)
+void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t audioParams)
 {
 	initAudioProcess(audioParams);
 
-	setVolume(audioFloat, 5.3f);
+	setVolume(audioFloat, 8.3f);
 	if(tremoloFilterEnabled)
 	{
 		tremoloFilter(audioFloat);
