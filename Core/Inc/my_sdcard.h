@@ -30,7 +30,7 @@ int sdCloseFile();
 int sdUnmount();
 
 // Custom functions for
-int sdGetFileList(char [MAX_FILE_NUM][64 + 1], char *, int *);
+int sdGetFileList(char **, char *, int *);
 int sdLoadSong(char *);
 int sdReadSong(int16_t [SONG_BUFF_SIZE], unsigned int *);
 

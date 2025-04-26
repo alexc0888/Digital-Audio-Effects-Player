@@ -9,22 +9,6 @@ typedef struct {
 
 track_t track_list_type[7];
 
-char track_list[MAX_FILE_NUM][64 + 1]; // 64 + 1 corresponds to MAX_FILE_NAME_LEN constant in main.c
-
-void setTrackList(char fileList[MAX_FILE_NUM][64 + 1], uint8_t numFiles)
-{
-	// Clear the old track list
-	for(uint8_t file = 0; file < MAX_FILE_NUM; file++)
-	{
-		strcpy(track_list[file], " ");
-	}
-	// Assign the new track list from the SD Card read
-	for(uint8_t file = 0; file < numFiles; file++)
-	{
-		strcpy(track_list[file], fileList[file]);
-	}
-}
-
 void OLED_1in5_rgb_Init(void) {
 	//Hardware reset
 	OLED_Reset();
@@ -140,19 +124,23 @@ void draw_text(uint32_t *image, uint32_t startX, uint32_t startY, char *text, ui
 	}
 }
 
-
-void render_track_list(int current_selection) {
-	current_selection %= 7;
+void render_list(int current_selection, char *header, char **lists, int numLists) {
+	if(numLists > MAX_LIST_PER_MENU)
+	{
+		DEBUG_PRINTF("WARNING: Cannot render a menu that contains more than %d lists! Truncating down to %d lists!", MAX_LIST_PER_MENU, MAX_LIST_PER_MENU);
+		numLists = MAX_LIST_PER_MENU;
+	}
+	current_selection %= numLists;
 
 	uint32_t image_buffer[128*128];
 	for (int i = 0; i < 128*128; i++)
 		image_buffer[i] = 0x00;
 
-	draw_text(image_buffer, 4, 4, "Track selection", 0xFFFFFFFF);
+	draw_text(image_buffer, 4, 4, header, 0xFFFFFFFF);
 	for (int i = 0; i < 128; i++) {
 		image_buffer[i + 15 * 128] = 0xFFFFFFFF;
 	}
-	for (int i = 1; i < 8; i++) {
+	for (int i = 1; i < numLists + 1; i++) {
 		uint32_t startX = 4;
 		uint32_t startY = i * (128/8) + 4;
 
@@ -162,50 +150,16 @@ void render_track_list(int current_selection) {
 					image_buffer[c + r * 128] = 0xFFFFFFFF;
 				}
 			}
-			draw_text(image_buffer, startX, startY, track_list[i - 1], 0x00000000);
+			draw_text(image_buffer, startX, startY, lists[i - 1], 0x00000000);
 		} else {
-			draw_text(image_buffer, startX, startY, track_list[i - 1], 0xFFFFFFFF);
+			draw_text(image_buffer, startX, startY, lists[i - 1], 0xFFFFFFFF);
 		}
 	}
 
 	OLED_1in5_rgb_Display(image_buffer);
 }
 
-void render_end_screen(int current_selection) {
-	current_selection %= 7;
-
-	uint32_t image_buffer[128*128];
-	char choiceStrings[2][5] = {"Yes!", "No!"};
-	for (int i = 0; i < 128*128; i++)
-		image_buffer[i] = 0x00;
-
-	draw_text(image_buffer, 4, 4, "Would you like", 0xFFFFFFFF);
-	draw_text(image_buffer, 4, 20, "to play another", 0xFFFFFFFF);
-	draw_text(image_buffer, 4, 36, "song?", 0xFFFFFFFF);
-	for (int i = 0; i < 128; i++) {
-		image_buffer[i + 45 * 128] = 0xFFFFFFFF;
-	}
-	for (int i = 3; i < 5; i++) {
-		uint32_t startX = 4;
-		uint32_t startY = i * (128/8) + 4;
-
-		if (current_selection + 3 == i) {
-			for (int r = i * 128/8; r < (i+1) * 128/8; r++) {
-				for (int c = 0; c < 128; c++) {
-					image_buffer[c + r * 128] = 0xFFFFFFFF;
-				}
-			}
-			draw_text(image_buffer, startX, startY, choiceStrings[i - 3], 0x00000000);
-		} else {
-			draw_text(image_buffer, startX, startY, choiceStrings[i - 3], 0xFFFFFFFF);
-		}
-	}
-
-	OLED_1in5_rgb_Display(image_buffer);
-}
-
-void render_track_playing(int current_selection, int current_duration, int total_duration) {
-	current_selection %= 7;
+void render_track_playing(char *trackName, int current_duration, int total_duration) {
 	float seek_percent = (float) current_duration / (float) total_duration;
 
 	uint32_t image_buffer[128*128];
@@ -220,8 +174,8 @@ void render_track_playing(int current_selection, int current_duration, int total
 	char track_name_out[max_row_len + 1];
 	int count = 0;
 	int row_count = 0;
-	for (int i = 0; track_list[current_selection][i] != '\0'; i++) {
-		char c = track_list[current_selection][i];
+	for (int i = 0; trackName[i] != '\0'; i++) {
+		char c = trackName[i];
 		track_name_out[count++] = c;
 		if (count == max_row_len) {
 			track_name_out[max_row_len] = '\0';

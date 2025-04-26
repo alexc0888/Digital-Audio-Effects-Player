@@ -17,14 +17,20 @@ uint8_t TDbassBoostEnabled = TRUE;
 float TDbassBoostFactor = 3.0f;  // Amplification factor for bass frequencies
 float TDfilterCoeff = 0.1f;     // Lower value = lower cutoff frequency (more bass)
 
-
 // Filter state variables for tremolo effect
-uint8_t tremoloFilterEnabled = TRUE;
+uint8_t TDtremoloFilterEnabled = FALSE;
 float triangleWave = 0.0f;
 float triDir       = 1.0f;
 float triFreq      = 10;
 float triMax       = 0;
 float tremoloDepth = 0.5f;
+
+// Time-domain treble boost
+float TDhighFilterState    = 0.0f;
+uint8_t TDtrebleBoostEnabled = FALSE;  // enable time-domain approach
+float TDtrebleBoostFactor  = 2.0f;     // initial boost
+float TDfilterHighCoeff    = 0.1f;     // high-pass filter coeff
+float TDprevSample         = 0.0f; // Previous sample for high-pass filter
 
 
 uint8_t normalizeAudio = TRUE;
@@ -36,21 +42,29 @@ uint8_t normalizeAudio = TRUE;
  */
 void initAudioProcess(knobs_t audioParams)
 {
-    if (FDbassBoostEnabled)
+    if(FDbassBoostEnabled)
     {
   		cutoffBin = (int)(FDbassFreqCutoff * FFT_AUDIO_LEN / AUDIO_SAMPLE_RATE);
     }
-    // Reset filter state
-    else if (TDbassBoostEnabled)
+    else if(TDbassBoostEnabled)
     {
   		TDfilterState = 0.0f;
   		TDbassBoostFactor = audioParams.bassGain * BASS_BOOST_FACTOR_MAX;
   		TDfilterCoeff     = audioParams.bassCutoff * BASS_BOOST_CUTOFF_MAX;
     }
-    if (tremoloFilterEnabled)
+
+    if(TDtremoloFilterEnabled)
     {
-      triMax =  (AUDIO_SAMPLE_RATE / triFreq) * 0.25f;
-      tremoloDepth = audioParams.tremoloDepth * TREMOLO_DEPTH_MAX;
+      triMax =  (AUDIO_SAMPLE_RATE / triFreq) * 0.25f; // 10 Hz triangle wave
+      tremoloDepth = audioParams.tremoloDepth * TREMOLO_DEPTH_MAX; // depth determines the degree of AM present in the output signal
+    }
+
+    if(TDtrebleBoostEnabled)
+    {
+    	TDhighFilterState = 0.0f;
+    	TDprevSample        = 0.0f;
+    	TDtrebleBoostFactor = audioParams.trebleGain * TREBLE_BOOST_FACTOR_MAX;
+    	TDfilterHighCoeff = audioParams.trebleCutoff * TREBLE_BOOST_CUTOFF_MAX;
     }
 }
 
@@ -83,35 +97,35 @@ void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t audioParam
 	initAudioProcess(audioParams);
 
 	setVolume(audioFloat, 8.3f);
-	if(tremoloFilterEnabled)
+	if(TDtremoloFilterEnabled)
 	{
-		tremoloFilter(audioFloat);
+		TDtremoloFilter(audioFloat);
 	}
 	if (TDbassBoostEnabled)
 	{
 		TDbassBoost(audioFloat);
 		// Normalize if needed to prevent clipping
-	    if(normalizeAudio)
+	  if(normalizeAudio)
+	  {
+	    float maxAmp = 0.0f;
+
+	    // Find maximum amplitude
+	    for(int i = 0; i < SONG_BUFF_SIZE; i++)
 	    {
-	        float maxAmp = 0.0f;
-
-	        // Find maximum amplitude
-	        for(int i = 0; i < SONG_BUFF_SIZE; i++)
-	        {
-	            float absValue = fabsf(audioFloat[i]);
-	            if(absValue > maxAmp) maxAmp = absValue;
-	        }
-
-	        // Scale if above threshold
-	        if(maxAmp > 0.95f * MAX_AMPLITUDE)
-	        {
-	            float scale = (0.95f * MAX_AMPLITUDE) / maxAmp;
-	            for(int i = 0; i < SONG_BUFF_SIZE; i++)
-	            {
-	                audioFloat[i] *= scale;
-	            }
-	        }
+	      float absValue = fabsf(audioFloat[i]);
+	      if(absValue > maxAmp) maxAmp = absValue;
 	    }
+
+	    // Scale if above threshold
+	    if(maxAmp > 0.95f * MAX_AMPLITUDE)
+	    {
+	      float scale = (0.95f * MAX_AMPLITUDE) / maxAmp;
+	      for(int i = 0; i < SONG_BUFF_SIZE; i++)
+	      {
+	        audioFloat[i] *= scale;
+	      }
+	    }
+	  }
 	}
 	else if (FDbassBoostEnabled)
 	{
@@ -132,7 +146,33 @@ void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t audioParam
 		}
 	}
 
-  // Normalize if needed to prevent clipping
+	if (TDtrebleBoostEnabled)
+	{
+	  TDtrebleBoost(audioFloat);
+		// Normalize if needed to prevent clipping
+	  if(normalizeAudio)
+	  {
+	    float maxAmp = 0.0f;
+
+	    // Find maximum amplitude
+	    for(int i = 0; i < SONG_BUFF_SIZE; i++)
+	    {
+	      float absValue = fabsf(audioFloat[i]);
+	      if(absValue > maxAmp) maxAmp = absValue;
+	    }
+
+	    // Scale if above threshold
+	    if(maxAmp > 0.95f * MAX_AMPLITUDE)
+	    {
+	      float scale = (0.95f * MAX_AMPLITUDE) / maxAmp;
+	      for(int i = 0; i < SONG_BUFF_SIZE; i++)
+	      {
+	        audioFloat[i] *= scale;
+	      }
+	    }
+	  }
+	}
+
 
 }
 
@@ -200,9 +240,9 @@ void TDsetBassBoostParameters(float amount, float cutoff)
 /**
  * @brief Toggle bass boost effect on/off, propbably via button or screen press
  */
-void TDtoggleBassBoost(void)
+void TDsrBassBoost(int sr)
 {
-    TDbassBoostEnabled = !TDbassBoostEnabled;
+	TDbassBoostEnabled = (sr) ? TRUE : FALSE;
 }
 
 /**
@@ -227,7 +267,7 @@ void setVolume(float* audioFloat, float gain)
 	}
 }
 
-void tremoloFilter(float* audioFloat)
+void TDtremoloFilter(float* audioFloat)
 {
 	for(int sample = 0; sample < SONG_BUFF_SIZE; sample++)
 	{
@@ -239,6 +279,37 @@ void tremoloFilter(float* audioFloat)
 			triDir *= -1; // reached a peak of the wave period, so flip the sign to go the other way
 		}
 	}
+}
+
+void TDsrTremoloFilter(int sr)
+{
+	TDtremoloFilterEnabled = (sr) ? TRUE : FALSE;
+}
+
+
+void TDtrebleBoost(float* audioFloat)
+{
+  float highComp[SONG_BUFF_SIZE];
+
+  /* high-pass: y[n] = a*(y[n-1] + x[n] - x[n-1]) */
+  for (int i = 0; i < SONG_BUFF_SIZE; i++)
+  {
+    float curr = audioFloat[i];
+    highComp[i] = TDfilterHighCoeff * (TDhighFilterState + curr - TDprevSample);
+    TDhighFilterState = highComp[i];
+    TDprevSample      = curr;
+  }
+
+  /* re-mix boosted treble */
+  for (int i = 0; i < SONG_BUFF_SIZE; i++)
+  {
+    audioFloat[i] += TDtrebleBoostFactor * highComp[i];
+  }
+}
+
+void TDsrTrebleBoost(int sr)
+{
+  TDtrebleBoostEnabled = (sr) ? TRUE : FALSE;
 }
 
 

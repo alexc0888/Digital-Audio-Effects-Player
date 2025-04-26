@@ -60,7 +60,7 @@ int sdUnmount()
 }
 
 
-int sdGetFileList(char fileList[MAX_FILE_NUM][64 + 1], char *dirPath, int *numFiles)
+int sdGetFileList(char **fileList, char *dirPath, int *numFiles)
 {
 	DIR dir;
 	FILINFO fInfo;

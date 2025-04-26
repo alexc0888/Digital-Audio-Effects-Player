@@ -16,6 +16,14 @@
   *
   ******************************************************************************
   */
+
+/*
+ * main.h
+ *
+ *  Created on: Mar 20, 2025
+ *      Author: alexc0888 (Alex Chitsazzadeh)
+ */
+
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -44,7 +52,13 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef enum
+{
+	TRACK_LIST_STATE,
+	OPTIONS_LIST_STATE,
+	YES_NO_LIST_STATE,
+	TRACK_PLAYING_STATE
+} state_t;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -68,9 +82,8 @@ void OLED_StartWrite();
 void OLED_WriteSeq(uint8_t *data, int len);
 void OLED_EndWrite();
 
-int trackSelectionState();
-void playTrackState(int);
-uint32_t endState();
+char listState(char **listToDisp, int numItems, char *header, int *cursor);
+void playTrackState(int, char*);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

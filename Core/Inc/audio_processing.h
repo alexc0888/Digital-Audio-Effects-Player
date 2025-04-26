@@ -22,22 +22,30 @@ extern float audioFFTPhaseBuffer[FFT_AUDIO_LEN / 2]; /* Phase value of each bin 
 extern uint8_t normalizeAudio;
 extern uint8_t FDbassBoostEnabled;
 extern uint8_t TDbassBoostEnabled;
+extern uint8_t TDtrebleBoostEnabled;
+
 
 // defined constants
 #define BASS_BOOST_FACTOR_MAX 10.0f
 #define BASS_BOOST_CUTOFF_MAX 0.1f
 #define TREMOLO_DEPTH_MAX     1.0f
-
+#define TREBLE_BOOST_FACTOR_MAX 10.0f
+#define TREBLE_BOOST_CUTOFF_MAX 0.1f
 
 // function declarations
+void initAudioProcess(knobs_t audioParams);
+void setVolume(float* audioFloat, float gain);
 void convS16Float(int16_t* songBuffer, float* audioFloat, int toFloat);
 void applyAudioEffects(float* audioFloat, uint16_t inputSize, knobs_t audioParams);
 void FDbassBoost();
+
 void TDbassBoost();
-void initAudioProcess(knobs_t audioParams);
-void TDsetBassBoostParameters(float amount, float cutoff);
-void TDtoggleBassBoost(void);
-void setVolume(float* audioFloat, float gain);
-void tremoloFilter(float* audioFloat);
+void TDsrBassBoost(int sr);
+
+void TDtremoloFilter(float* audioFloat);
+void TDsrTremoloFilter(int sr);
+
+void TDtrebleBoost(float* audioFloat);
+void TDsrTrebleBoost(int sr);
 
 #endif

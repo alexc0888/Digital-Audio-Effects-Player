@@ -15,18 +15,17 @@
 
 #define OLED_1in5_RGB_WIDTH  128 //OLED width
 #define OLED_1in5_RGB_HEIGHT 128 //OLED height
+#define MAX_LIST_PER_MENU    7 // max amount of items we can show per screen
 
 
-void setTrackList(char [MAX_FILE_NUM][64 + 1], uint8_t);
 
 void OLED_1in5_rgb_Init(void);
 void OLED_1in5_rgb_Clear(uint8_t r, uint8_t g, uint8_t b);
 void OLED_1in5_rgb_Display(uint32_t *Image);
 void draw_char(uint32_t *image, uint32_t startX, uint32_t startY, char c, uint32_t color);
 void draw_text(uint32_t *image, uint32_t startX, uint32_t startY, char *text, uint32_t color);
-void render_track_list(int current_selection);
-void render_track_playing(int current_selection, int current_duration, int total_duration);
-void render_end_screen(int current_selection);
+void render_list(int current_selection, char *header, char **lists, int numLists);
+void render_track_playing(char *trackName, int current_duration, int total_duration);
 void OLED_InitReg(void);
 
 

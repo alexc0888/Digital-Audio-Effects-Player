@@ -55,12 +55,9 @@ UART_HandleTypeDef huart3;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
-int numSongs;
 volatile int adcDone = TRUE;
 volatile uint16_t adcSamples[5];
 volatile knobs_t controlKnobs;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,31 +121,42 @@ void OLED_EndWrite() {
 	HAL_GPIO_WritePin(OLED_CS_GPIO_Port, OLED_CS_Pin, GPIO_PIN_SET);
 }
 
-int trackSelectionState()
+char listState(char **listToDisp, int numItems, char *header, int *cursor)
 {
-	int cursor = 0;
+	*cursor = 0; // clear out the cursor for next render
 	char input = 'X';
+	char *list[MAX_LIST_PER_MENU]; // we can only display 7 items per menu, so lets fit our list down to this
+
+	for(int item = 0; item < MAX_LIST_PER_MENU; item++)
+	{
+		list[item] = "\0";
+	}
+	for(int item = 0; (item < MAX_LIST_PER_MENU) && (item < numItems); item++)
+	{
+		list[item] = listToDisp[item];
+	}
+
 	do
 	{
 		input = getButton();
-		cursor += (input == 'D') ? 1  :
+
+		*cursor += (input == 'D') ? 1  :
 							(input == 'U') ? -1 : 0;
-
-		if(cursor < 0)
+		if(*cursor < 0)
 		{
-			cursor = 6;
+			*cursor = numItems - 1;
 		}
-		if(cursor > 6)
+		if(*cursor > numItems - 1)
 		{
-			cursor = 0;
+			*cursor = 0;
 		}
-		render_track_list(cursor);
-	} while(input != 'R');
+		render_list(*cursor, header, list, numItems);
+	} while(input != 'R' && input != 'L');
 
-	return cursor;
+	return input;
 }
 
-void playTrackState(int songSelection)
+void playTrackState(int songSelection, char *songName)
 {
   // Initialize important variables for playing song
   int songPlaying = TRUE;
@@ -164,7 +172,7 @@ void playTrackState(int songSelection)
 	adcDone = TRUE;
 
 	// Load up the song and parse the header of the .WAV file
-  if(sdLoadSong(songList[songSelection]) != SD_SUCCESS)
+  if(sdLoadSong(songName) != SD_SUCCESS)
   {
   	Error_Handler();
   }
@@ -175,7 +183,6 @@ void playTrackState(int songSelection)
 	int totalDuration = songInfo.Subchunk2Size / AUDIO_SAMPLE_RATE;
 	int currTime      = 0;
 
-  render_track_playing(songSelection, 1, 999);
   while(songPlaying)
   {
   	if(adcDone == TRUE)
@@ -201,7 +208,7 @@ void playTrackState(int songSelection)
     if(cycle == 0)
     {
     	currTime = ((double) currentByte / (double) songInfo.Subchunk2Size) * (double) totalDuration;
-      render_track_playing(songSelection, currTime, totalDuration);
+      render_track_playing(songName, currTime, totalDuration);
     }
     cycle++;
     if(cycle == 1000)
@@ -259,21 +266,7 @@ void playTrackState(int songSelection)
 
 }
 
-uint32_t endState()
-{
-	int cursor = 0;
-	char input = 'X';
-	do
-	{
-		input = getButton();
-		if(input == 'D' || input == 'U')
-		{
-			cursor ^= 0x1;
-		}
-		render_end_screen(cursor);
-	} while(input != 'R');
-	return !cursor;
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -324,45 +317,88 @@ int main(void)
     Error_Handler();
   }
 
+  // point back into the songList array with songPtrs
+  // I am doing this so that I can pass these parameters into
+  // functions that accept generic char ** args
+  char songList[MAX_FILE_NUM][MAX_FILE_NAME_LEN];
+  char *songPtrs[MAX_FILE_NUM];
+  for(int i = 0; i < MAX_FILE_NUM; i++)
+  {
+  	songPtrs[i] = songList[i];
+  }
+  int numSongs;
+  char *optionList[3] = {"Bass Boost", "Tremolo Filter", "Treble Boost"};
+  char *yesNoList[2] = {"Yes", "No"};
+	int selection;
+	int currOption;
+	state_t oledState = TRACK_LIST_STATE; // always turn on machine with this state
+	state_t nextState = oledState;
+	char stateInput;
+
   // grab a list of all the songs currently on-file in the SD card
-  if(sdGetFileList(songList, SONG_DIR, &numSongs) != SD_SUCCESS)
+  if(sdGetFileList(songPtrs, SONG_DIR, &numSongs) != SD_SUCCESS)
   {
   	Error_Handler();
   }
   DEBUG_PRINTF("Printing all the found songs: \r\n");
   for(int i = 0; i < numSongs; i++)
   {
-  	DEBUG_PRINTF("%s\r\n", songList[i]);
+  	DEBUG_PRINTF("%s\r\n", songPtrs[i]);
   }
-  setTrackList(songList, numSongs);
 	// Reset the OLED
   OLED_Reset();
   OLED_InitReg();
   OLED_1in5_rgb_Init();
 
 
-
-	uint32_t deviceOn = TRUE;
-  do
+  while(1)
   {
-    // Initiate hardware for playing music
-  	initMatrix();
-  	initFrameBuffers();
-  	initDAC();
 
-    int selection = trackSelectionState();
-    playTrackState(selection);
-    initDAC(); // reset DAC to stop audio playback
-    deviceOn = endState();
-  } while(deviceOn);
+  	if(oledState == TRACK_LIST_STATE)
+  	{
+  		stateInput = listState(songPtrs, numSongs, "Track Selection", &selection);
+  		nextState = (stateInput == 'R') ? TRACK_PLAYING_STATE : OPTIONS_LIST_STATE;
+  	}
+  	else if(oledState == OPTIONS_LIST_STATE)
+  	{
+  		stateInput = listState(optionList, sizeof(optionList) / sizeof(char *), "Options", &selection);
+  		currOption = selection; // preserve the current selected option for future use
+  		nextState = (stateInput == 'R') ? TRACK_LIST_STATE : YES_NO_LIST_STATE;
+  	}
+  	else if(oledState == YES_NO_LIST_STATE)
+  	{
+  		stateInput = listState(yesNoList, sizeof(yesNoList) / sizeof(char *), optionList[currOption], &selection);
+  		nextState = OPTIONS_LIST_STATE;
+  		if(currOption == 0)
+  		{
+  			TDsrBassBoost(!selection);
+  		}
+  		else if(currOption == 1)
+  		{
+  			TDsrTremoloFilter(!selection);
+  		}
+  		else if(currOption == 1)
+  		{
+  			TDsrTrebleBoost(!selection);
+  		}
+  	}
+  	else if(oledState == TRACK_PLAYING_STATE)
+  	{
+      // Initiate hardware for playing music
+    	initMatrix();
+    	initFrameBuffers();
+    	initDAC();
+      playTrackState(selection, songList[selection]);
+      // reset DAC and matrix to stop audio and visual playback
+      initMatrix();
+      initFrameBuffers();
+      initDAC();
+      nextState = TRACK_LIST_STATE;
+  	}
+  	oledState = nextState;
+  }
 
 
-
-
-  // reset the hardware on exit
-	initMatrix();
-	initFrameBuffers();
-	initDAC();
 	// Reset the OLED
   OLED_Reset();
   if(sdUnmount() != SD_SUCCESS)
