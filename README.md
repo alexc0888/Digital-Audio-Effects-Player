@@ -38,7 +38,8 @@ while optimizing other parts of the system proved to be enough to stream at the 
 
 ## Documentation 
 
-You can learn more about the project by reading the report at [Documentation/Digital Audio Effects Player Final Report.pdf](https://github.com/alexc0888/Digital-Audio-Effects-Player/blob/master/Documentation/Digital%20Audio%20Effects%20Player%20Final%20Report.pdf)
+- You can learn more about the project by reading the report at [Documentation/Digital Audio Effects Player Final Report.pdf](https://github.com/alexc0888/Digital-Audio-Effects-Player/blob/master/Documentation/Digital%20Audio%20Effects%20Player%20Final%20Report.pdf)
+- You can find the project schematic at [/Project Schem.pdf](https://github.com/alexc0888/Digital-Audio-Effects-Player/blob/master/Project%20Schem.pdf)
 
 ---
 
