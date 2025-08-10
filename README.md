@@ -51,6 +51,18 @@ Check out a live demo here:
 
 ---
 
+## Contributors
+
+- Alex Chitsazzadeh
+- Aditya Sood
+- Kerway Tsai
+- Vinay Jagan
+- Derek Rosales
+- Zichen Zhu
+- Austin Kinkade
+
+---
+
 
 ## Acknowledgments
 
